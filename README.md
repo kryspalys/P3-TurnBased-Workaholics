@@ -1,8 +1,8 @@
 # Grandma's Cabin Defense (Turn-Based Combat)
 
 ## Team Information
-* **Name:** Workaholics
-* **Student ID:** Nataliya Laptyk, Emil Marchand, Alex Nobre, Krys Palys.
+* **Team Name:** Workaholics
+* **Student Names:** Nataliya Laptyk, Emil Marchand, Alex Nobre, Krys Palys.
 
 ## Game Context
 A fairy tale battle. Grandma defends her woodland cabin against the Big Bad Wolf using a turn-based combat system. 
@@ -10,7 +10,7 @@ A fairy tale battle. Grandma defends her woodland cabin against the Big Bad Wolf
 ## Player Actions
 * **Cane Whack (Attack):** Standard melee strike dealing base damage.
 * **Knitting Shield (Defend):** Reduces incoming damage for the subsequent turn.
-* **Bake Cookies (Heal):** Restores a portion of Grandma's HP.
+* **Baked Cookies (Heal):** Restores a portion of Grandma's HP.
 * **Purse Slam (Special):** A high-damage attack available only when the "Grandma Meter" reaches maximum capacity. 
 
 ## AI Logic
