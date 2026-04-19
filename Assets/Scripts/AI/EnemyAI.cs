@@ -4,9 +4,34 @@ using UnityEngine.Events;
 using CombatSettings;
 
 /// <summary>
+/// Defines standard AI controller requirements.
+/// </summary>
+public interface IEnemyAI
+{
+    /// <summary>
+    /// Applies standard damage to the player target.
+    /// </summary>
+    void ExecuteStandardDamage();
+}
+
+/// <summary>
 /// Controls the programmatic decision-making logic for the AI antagonist.
 /// </summary>
-public class EnemyAI : MonoBehaviour
+/// <remarks>
+/// <para>This class handles automated responses and ensures animations map perfectly to AI states.</para>
+/// <list type="bullet">
+/// <item><term>Threshold Logic</term><description>Decisions are hardcoded based on HP percentages.</description></item>
+/// <item><term>Event Driven</term><description>Subscribes to state changes rather than polling in Update loops.</description></item>
+/// </list>
+/// <example>
+/// <code>
+/// // Implicitly started by TurnManager event broadcasts.
+/// </code>
+/// </example>
+/// <include file='ExternalDocs.xml' path='docs/members[@name="EnemyAI"]/EnemyAI/*'/>
+/// </remarks>
+/// <seealso cref="Health"/>
+public class EnemyAI : MonoBehaviour, IEnemyAI
 {
     [Header("Dependencies")]
     /// <summary>Reference to the global turn authority.</summary>
@@ -30,22 +55,39 @@ public class EnemyAI : MonoBehaviour
     /// <summary>The animator driving the AI's visual state.</summary>
     private Animator aiAnimator;
 
+    /// <summary>Tracks hit points to determine if damage was taken.</summary>
+    private float previousHealth;
+
+    /// <summary>Exposes the current configured claw damage.</summary>
+    /// <value>Returns a float representing the base <c>clawDamage</c>.</value>
+    public float BaseDamage => clawDamage;
+
     /// <summary>Caches components prior to first frame.</summary>
     private void Awake()
     {
         TryGetComponent<Animator>(out aiAnimator);
     }
 
-    /// <summary>Subscribes to turn management events to listen for AI trigger.</summary>
+    /// <summary>Subscribes to turn management and health events.</summary>
     private void OnEnable()
     {
         turnManager.OnTurnChanged.AddListener(HandleTurnChange);
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnHealthChanged.AddListener(HandleHealthChanged);
+            enemyHealth.OnDeath.AddListener(HandleDeath);
+        }
     }
 
-    /// <summary>Unsubscribes from turn management events to prevent memory leaks.</summary>
+    /// <summary>Unsubscribes from events to prevent memory leaks.</summary>
     private void OnDisable()
     {
         turnManager.OnTurnChanged.RemoveListener(HandleTurnChange);
+        if (enemyHealth != null)
+        {
+            enemyHealth.OnHealthChanged.RemoveListener(HandleHealthChanged);
+            enemyHealth.OnDeath.RemoveListener(HandleDeath);
+        }
     }
 
     /// <summary>
@@ -61,6 +103,28 @@ public class EnemyAI : MonoBehaviour
     }
 
     /// <summary>
+    /// Evaluates if the AI took damage to trigger the appropriate reaction.
+    /// </summary>
+    /// <param name="current">The current hit points broadcasted by the health script.</param>
+    /// <param name="max">The maximum hit points broadcasted by the health script.</param>
+    private void HandleHealthChanged(float current, float max)
+    {
+        if (current < previousHealth && aiAnimator != null)
+        {
+            aiAnimator.SetTrigger("WolfHurt");
+        }
+        previousHealth = current;
+    }
+
+    /// <summary>
+    /// Triggers the terminal animation sequence upon health reaching zero.
+    /// </summary>
+    private void HandleDeath()
+    {
+        if (aiAnimator != null) aiAnimator.SetTrigger("WolfDeath");
+    }
+
+    /// <summary>
     /// Coroutine that evaluates battlefield conditions and selects an optimal move based on hardcoded thresholds.
     /// </summary>
     /// <returns>An <see cref="IEnumerator"/> handling the execution delay.</returns>
@@ -71,26 +135,33 @@ public class EnemyAI : MonoBehaviour
         if (playerHealth.GetHealthPercentage() < 0.3f)
         {
             OnAIDecisionMade?.Invoke("The Beast lunges for a heavy bite!");
-            aiAnimator.SetTrigger("SpecialAttack");
+
+            if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
+            else ExecuteHeavyDamage();
         }
         else if (enemyHealth.GetHealthPercentage() < 0.5f)
         {
             OnAIDecisionMade?.Invoke("The Beast howls, regenerating health!");
-            aiAnimator.SetTrigger("Defend");
+
+            if (aiAnimator != null) aiAnimator.SetTrigger("WolfHeal");
+
             enemyHealth.Heal(howlHealAmount);
             EndAITurn();
         }
         else
         {
             OnAIDecisionMade?.Invoke("The Beast swipes its claws!");
-            aiAnimator.SetTrigger("Attack");
+
+            if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
+            else ExecuteStandardDamage();
         }
     }
 
-    /// <summary>Applies damage for the basic AI attack (Triggered via Animation Event).</summary>
+    /// <inheritdoc/>
     public void ExecuteStandardDamage()
     {
         playerHealth.TakeDamage(clawDamage);
+        if (aiAnimator != null) aiAnimator.SetTrigger("WolfIdle");
         EndAITurn();
     }
 
@@ -98,6 +169,7 @@ public class EnemyAI : MonoBehaviour
     public void ExecuteHeavyDamage()
     {
         playerHealth.TakeDamage(heavyBiteDamage);
+        if (aiAnimator != null) aiAnimator.SetTrigger("WolfIdle");
         EndAITurn();
     }
 
@@ -105,5 +177,20 @@ public class EnemyAI : MonoBehaviour
     private void EndAITurn()
     {
         turnManager.SwitchTurn(TurnState.PlayerTurn);
+    }
+
+    /// <summary>
+    /// A generic utility demonstrating advanced type extraction.
+    /// </summary>
+    /// <typeparam name="T">The component type to extract.</typeparam>
+    /// <returns>Returns the component of type <typeparamref name="T"/> attached to this object.</returns>
+    /// <exception cref="System.NullReferenceException">Thrown if the component cannot be found.</exception>
+    public T GetComponentSafely<T>() where T : Component
+    {
+        if (!TryGetComponent<T>(out T component))
+        {
+            throw new System.NullReferenceException($"Component {typeof(T)} not found.");
+        }
+        return component;
     }
 }

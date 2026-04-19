@@ -125,6 +125,20 @@ public class PauseManager : MonoBehaviour, IPauseManager
         LoadSceneSafely(mainMenuSceneName);
     }
 
+    /// <inheritdoc/>
+    public void QuitGame()
+    {
+        Debug.Log("Quit command registered.");
+
+#if UNITY_EDITOR
+        // This stops the play mode inside the Unity Editor
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        // This closes the actual executable once the game is built
+        Application.Quit();
+#endif
+    }
+
     /// <summary>
     /// Safely executes a scene transition.
     /// </summary>
