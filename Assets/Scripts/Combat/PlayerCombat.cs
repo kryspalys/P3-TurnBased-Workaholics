@@ -155,19 +155,20 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// </summary>
     public void Action_PurseSlam()
     {
-        // FIX: Replaced GetCurrentTurn() with the CurrentTurn property
         if (turnManager.CurrentTurn != TurnState.PlayerTurn || currentGrandmaMeter < maxGrandmaMeter) return;
 
         currentGrandmaMeter = 0;
         OnMeterUpdated?.Invoke(currentGrandmaMeter, maxGrandmaMeter);
 
+        // The Fallback Logic
         if (characterAnimator != null)
         {
-            characterAnimator.SetTrigger("GrannyAttack");
+            // Changed from GrannyAttack to the new unique special trigger
+            characterAnimator.SetTrigger("GrannySpecial");
         }
         else
         {
-            ExecuteSpecialDamage();
+            ExecuteSpecialDamage(); // No animator? Just hit them instantly!
         }
     }
 
