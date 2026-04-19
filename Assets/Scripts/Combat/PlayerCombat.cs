@@ -129,7 +129,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// </summary>
     public void Action_KnittingShield()
     {
-        // FIX: Replaced GetCurrentTurn() with the CurrentTurn property
+        // Replaced GetCurrentTurn() with the CurrentTurn property
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyBlock");
@@ -142,7 +142,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// </summary>
     public void Action_BakeCookies()
     {
-        // FIX: Replaced GetCurrentTurn() with the CurrentTurn property
+        // Replaced GetCurrentTurn() with the CurrentTurn property
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyHeal");
