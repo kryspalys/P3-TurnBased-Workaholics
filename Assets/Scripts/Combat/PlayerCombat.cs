@@ -56,8 +56,18 @@ public class PlayerCombat : MonoBehaviour
     {
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
-        characterAnimator.SetTrigger("Attack");
         UpdateGrandmaMeter(1);
+
+        // The Fallback Logic
+        if (characterAnimator != null)
+        {
+            characterAnimator.SetTrigger("Attack");
+            // We wait for the Animation Event to call ExecuteMeleeDamage()
+        }
+        else
+        {
+            ExecuteMeleeDamage(); // No animator? Just hit them instantly!
+        }
     }
 
     /// <summary>
