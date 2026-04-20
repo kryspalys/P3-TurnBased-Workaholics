@@ -1,30 +1,36 @@
 namespace CombatSettings
 {
     /// <summary>
-    /// Represents the distinct phases of the combat loop.
+    /// Represents the distinct phases of the combat loop architecture.
     /// </summary>
     /// <remarks>
-    /// <para>This enumeration is the central authority for the game's state machine.</para>
-    /// <para>Rules for state transitions:</para>
+    /// <para>This enumeration serves as the central authority for the game's state machine.</para>
+    /// <para>Rules for state transitions and their effects:</para>
     /// <list type="bullet">
-    /// <item><term>PlayerTurn</term><description>Allows player input; ignores AI logic.</description></item>
-    /// <item><term>EnemyTurn</term><description>Locks player input; triggers AI coroutines.</description></item>
-    /// <item><term>GameOver</term><description>Terminal state; locks all inputs and halts gameplay.</description></item>
+    /// <item><term>PlayerTurn</term><description>Allows player UI input; ignores background AI processing.</description></item>
+    /// <item><term>EnemyTurn</term><description>Locks player UI input; triggers programmatic AI coroutines.</description></item>
+    /// <item><term>GameOver</term><description>Terminal state; locks all inputs, halts gameplay, and triggers final UI screens.</description></item>
     /// </list>
     /// <example>
     /// <code>
-    /// if (currentTurn == TurnState.PlayerTurn) { /* Allow UI interaction */ }
+    /// // Standard evaluation check before permitting an action:
+    /// if (currentTurn == TurnState.PlayerTurn) 
+    /// { 
+    ///     ExecutePlayerAction(); 
+    /// }
     /// </code>
     /// </example>
     /// </remarks>
     /// <seealso cref="TurnManager"/>
     public enum TurnState
     {
-        /// <summary>The state where Grandma (the player) selects an action.</summary>
+        /// <summary>The phase where the protagonist selects an action from the interface.</summary>
         PlayerTurn,
-        /// <summary>The state where the Big Bad Wolf (the AI) executes a programmed response.</summary>
+
+        /// <summary>The phase where the antagonist evaluates conditions and executes a response.</summary>
         EnemyTurn,
-        /// <summary>The terminal state triggered when either combatant's health reaches zero.</summary>
+
+        /// <summary>The terminal phase triggered when a combatant's hit points reach zero.</summary>
         GameOver
     }
 }

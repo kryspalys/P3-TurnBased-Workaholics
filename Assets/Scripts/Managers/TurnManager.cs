@@ -3,46 +3,56 @@ using UnityEngine.Events;
 using CombatSettings;
 
 /// <summary>
+/// Defines standard operations for managing sequential combat phases.
+/// </summary>
+public interface ITurnManager
+{
+    /// <summary>
+    /// Transitions the game to a newly specified combat phase.
+    /// </summary>
+    /// <param name="newState">The incoming state to apply.</param>
+    void SwitchTurn(TurnState newState);
+}
+
+/// <summary>
 /// The central controller that manages the flow of <see cref="TurnState"/> transitions.
 /// </summary>
 /// <remarks>
-/// <para>This class enforces the strict turn order required by the game architecture. 
-/// No other script is permitted to change the turn state directly; they must request a change through this manager.</para>
+/// <para>This class enforces the strict turn order required by the decoupled game architecture. 
+/// No peripheral script is permitted to change the turn state directly; they must request a mutation through this manager.</para>
 /// <include file='ExternalDocs.xml' path='docs/members[@name="TurnManager"]/TurnManager/*'/>
 /// </remarks>
-public class TurnManager : MonoBehaviour
+public class TurnManager : MonoBehaviour, ITurnManager
 {
+    [Header("State Data")]
     /// <summary>
     /// The current operational state of the combat loop.
     /// </summary>
     [SerializeField] private TurnState currentTurnState = TurnState.PlayerTurn;
 
-    /// <summary>
-    /// Broadcasts an event containing the new <see cref="TurnState"/> whenever the state changes.
-    /// </summary>
     [Header("Broadcasting Events")]
+    /// <summary>
+    /// Broadcasts an event containing the new <see cref="TurnState"/> whenever the state mutates.
+    /// </summary>
     public UnityEvent<TurnState> OnTurnChanged;
 
     /// <summary>
-    /// Gets the current active turn state.
+    /// Gets the currently active combat phase.
     /// </summary>
-    /// <value>Returns the current <see cref="TurnState"/> enumeration.</value>
+    /// <value>Returns the active <see cref="TurnState"/> enumeration.</value>
     public TurnState CurrentTurn => currentTurnState;
 
     /// <summary>
-    /// Initializes the combat loop by forcing the initial state broadcast.
+    /// Initializes the combat loop by forcing the initial state broadcast prior to player interaction.
     /// </summary>
     private void Start()
     {
         SwitchTurn(TurnState.PlayerTurn);
     }
 
-    /// <summary>
-    /// Transitions the game to a new turn state and broadcasts the change.
-    /// </summary>
-    /// <param name="newState">The specific <see cref="TurnState"/> to transition into.</param>
+    /// <inheritdoc/>
     /// <remarks>
-    /// If the <paramref name="newState"/> or the current state is <c>TurnState.GameOver</c>, further transitions are blocked.
+    /// If the <paramref name="newState"/> or the <see cref="currentTurnState"/> is evaluated as <c>TurnState.GameOver</c>, further transitions are permanently blocked.
     /// </remarks>
     public void SwitchTurn(TurnState newState)
     {
@@ -53,24 +63,38 @@ public class TurnManager : MonoBehaviour
     }
 
     /// <summary>
-    /// A generic utility to fetch a specific combatant component from the scene, demonstrating generic type documentation.
+    /// A generic utility to fetch a specific combatant component from the scene hierarchy.
     /// </summary>
-    /// <typeparam name="T">The type of component to search for (must inherit from <see cref="MonoBehaviour"/>).</typeparam>
-    /// <returns>Returns the component of type <typeparamref name="T"/> if found; otherwise, null.</returns>
-    /// <exception cref="System.NullReferenceException">Thrown if the required component cannot be located.</exception>
+    /// <typeparam name="T">The specific type of component to search for (must inherit from <see cref="MonoBehaviour"/>).</typeparam>
+    /// <returns>Returns the component of type <typeparamref name="T"/> if successfully located.</returns>
+    /// <exception cref="System.NullReferenceException">Thrown if the required component cannot be located within the active scene.</exception>
     public T GetCombatantManager<T>() where T : MonoBehaviour
     {
         T combatant = FindAnyObjectByType<T>();
-        if (combatant == null) throw new System.NullReferenceException($"Component of type {typeof(T)} not found.");
+
+        if (combatant == null)
+        {
+            throw new System.NullReferenceException($"Critical Error: Component of type {typeof(T)} not found in the current scene context.");
+        }
+
         return combatant;
     }
 
     /// <summary>
-    /// Context menu hook for forcing the enemy turn directly from the Unity Inspector during testing.
+    /// A context menu hook allowing developers to force an enemy turn directly from the Unity Inspector during runtime testing.
     /// </summary>
     [ContextMenu("Test: Force Enemy Turn")]
     public void ForceEnemyTurn()
     {
         SwitchTurn(TurnState.EnemyTurn);
+    }
+
+    /// <summary>
+    /// A parameterless helper method designed specifically for Unity Inspector Events to bypass enum limitations.
+    /// </summary>
+    /// <remarks>Immediately forces the combat state to the terminal GameOver phase.</remarks>
+    public void TriggerGameOver()
+    {
+        SwitchTurn(TurnState.GameOver);
     }
 }

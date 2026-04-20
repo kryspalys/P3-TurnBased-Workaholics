@@ -3,28 +3,28 @@ using UnityEngine.Events;
 using CombatSettings;
 
 /// <summary>
-/// Defines standard operations for player-controlled entities in the combat system.
+/// Defines standard operational requirements for player-controlled entities within the combat architecture.
 /// </summary>
 public interface IPlayerCombat
 {
     /// <summary>
-    /// Executes the primary melee attack logic.
+    /// Executes the primary melee sequence logic.
     /// </summary>
     void Action_CaneWhack();
 }
 
 /// <summary>
-/// Manages the player's (Grandma's) specific combat actions, animations, and turn limit enforcement.
+/// Manages the protagonist's specific combat actions, including RNG damage modifiers and animation routing.
 /// </summary>
 /// <remarks>
-/// <para>This class acts as the bridge between player UI inputs and the underlying state machine.</para>
+/// <para>Damage values are dynamically calculated per turn using <see cref="Random.Range"/>.</para>
 /// <list type="bullet">
-/// <item><term>Animation Driven</term><description>Damage is applied via Animation Events when an animator is present.</description></item>
-/// <item><term>Fallback Support</term><description>If no animator is found, calculations execute instantly.</description></item>
+/// <item><term>Animation Driven</term><description>Damage is applied via Animation Events when an animator is active.</description></item>
+/// <item><term>Fallback Support</term><description>If no animator is present, damage and turn progression execute instantly.</description></item>
 /// </list>
 /// <example>
 /// <code>
-/// // Example of UI Event triggering the sequence:
+/// // Example of UI Event triggering the primary sequence:
 /// myPlayerCombat.Action_CaneWhack();
 /// </code>
 /// </example>
@@ -34,46 +34,52 @@ public interface IPlayerCombat
 public class PlayerCombat : MonoBehaviour, IPlayerCombat
 {
     [Header("Dependencies")]
-    /// <summary>Reference to the global turn authority.</summary>
+    /// <summary>Reference to the global state authority.</summary>
     [SerializeField] private TurnManager turnManager;
-    /// <summary>Reference to the antagonist's health component.</summary>
+    /// <summary>Reference to the antagonist's vital component.</summary>
     [SerializeField] private Health enemyHealth;
-    /// <summary>Reference to the protagonist's health component.</summary>
+    /// <summary>Reference to the protagonist's vital component.</summary>
     [SerializeField] private Health playerHealth;
 
-    [Header("Stats")]
-    /// <summary>Raw damage dealt by the basic attack.</summary>
-    [SerializeField] private float caneDamage = 15f;
+    [Header("Combat Stats & RNG")]
+    /// <summary>Minimum randomized boundary for basic attack damage.</summary>
+    [SerializeField] private float minCaneDamage = 12f;
+    /// <summary>Maximum randomized boundary for basic attack damage.</summary>
+    [SerializeField] private float maxCaneDamage = 20f;
+
+    /// <summary>Minimum randomized boundary for the ultimate attack damage.</summary>
+    [SerializeField] private float minPurseDamage = 35f;
+    /// <summary>Maximum randomized boundary for the ultimate attack damage.</summary>
+    [SerializeField] private float maxPurseDamage = 50f;
+
+    /// <summary>Probability of striking a critical hit, represented as a float between 0.0 and 1.0.</summary>
+    [SerializeField, Range(0f, 1f)] private float critChance = 0.15f;
+    /// <summary>The scaling multiplier applied to the base damage upon a successful critical hit.</summary>
+    [SerializeField] private float critMultiplier = 1.5f;
+
     /// <summary>Raw hit points restored by the healing action.</summary>
     [SerializeField] private float cookieHealAmount = 25f;
-    /// <summary>Raw damage dealt by the ultimate attack.</summary>
-    [SerializeField] private float purseSlamDamage = 40f;
-
-    /// <summary>The maximum capacity of the ultimate meter.</summary>
+    /// <summary>The maximum capacity of the ultimate ability meter.</summary>
     [SerializeField] private int maxGrandmaMeter = 3;
 
-    /// <summary>The current charge level of the ultimate meter.</summary>
+    /// <summary>The current charge level of the ultimate ability meter.</summary>
     private int currentGrandmaMeter = 0;
-
-    /// <summary>Tracks hit points to determine if damage was taken (triggering Hurt animation).</summary>
+    /// <summary>Tracks hit points internally to determine if damage was taken during a turn cycle.</summary>
     private float previousHealth;
 
-    /// <summary>Broadcasts changes to the ultimate meter for UI updates.</summary>
+    [Header("Broadcasting Events")]
+    /// <summary>Broadcasts state changes to the ultimate meter for UI slider updates.</summary>
     public UnityEvent<int, int> OnMeterUpdated;
 
-    /// <summary>The animator component driving visual feedback.</summary>
+    /// <summary>The animator component driving visual feedback states.</summary>
     private Animator characterAnimator;
 
-    /// <summary>
-    /// Exposes the current meter charge.
-    /// </summary>
-    /// <value>Returns an integer representing the <c>currentGrandmaMeter</c> charge.</value>
+    /// <summary>Exposes the current meter charge mathematically.</summary>
+    /// <value>Returns an integer representing the <c>currentGrandmaMeter</c> numeric charge.</value>
     public int CurrentMeter => currentGrandmaMeter;
 
-    /// <summary>
-    /// Caches essential components and sets initial state tracking during initialization.
-    /// </summary>
-    /// <exception cref="UnityEngine.MissingComponentException">Thrown if no Animator is attached to the GameObject.</exception>
+    /// <summary>Caches essential components prior to initial execution.</summary>
+    /// <exception cref="UnityEngine.MissingComponentException">Thrown if no Animator component is attached to the parent GameObject.</exception>
     private void Awake()
     {
         if (!TryGetComponent<Animator>(out characterAnimator))
@@ -82,9 +88,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         }
     }
 
-    /// <summary>
-    /// Subscribes to the health component to listen for damage and death events.
-    /// </summary>
+    /// <summary>Subscribes to the local health component to listen for vital events.</summary>
     private void OnEnable()
     {
         if (playerHealth != null)
@@ -94,9 +98,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         }
     }
 
-    /// <summary>
-    /// Unsubscribes from events to prevent memory leaks when disabled.
-    /// </summary>
+    /// <summary>Unsubscribes from events to prevent memory degradation.</summary>
     private void OnDisable()
     {
         if (playerHealth != null)
@@ -109,27 +111,17 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <inheritdoc/>
     public void Action_CaneWhack()
     {
-        // FIX: Replaced GetCurrentTurn() with the CurrentTurn property
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
         UpdateGrandmaMeter(1);
 
-        if (characterAnimator != null)
-        {
-            characterAnimator.SetTrigger("GrannyAttack");
-        }
-        else
-        {
-            ExecuteMeleeDamage();
-        }
+        if (characterAnimator != null) characterAnimator.SetTrigger("GrannyAttack");
+        else ExecuteMeleeDamage();
     }
 
-    /// <summary>
-    /// Initiates the defensive block sequence and immediately ends the turn.
-    /// </summary>
+    /// <summary>Initiates the defensive block sequence and concludes the player phase.</summary>
     public void Action_KnittingShield()
     {
-        // Replaced GetCurrentTurn() with the CurrentTurn property
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyBlock");
@@ -137,12 +129,9 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         EndTurn();
     }
 
-    /// <summary>
-    /// Initiates the healing sequence and immediately ends the turn.
-    /// </summary>
+    /// <summary>Initiates the healing sequence and concludes the player phase.</summary>
     public void Action_BakeCookies()
     {
-        // Replaced GetCurrentTurn() with the CurrentTurn property
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyHeal");
@@ -150,9 +139,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         EndTurn();
     }
 
-    /// <summary>
-    /// Initiates the ultimate attack sequence if the meter is fully charged.
-    /// </summary>
+    /// <summary>Initiates the ultimate attack sequence if the meter is fully charged.</summary>
     public void Action_PurseSlam()
     {
         if (turnManager.CurrentTurn != TurnState.PlayerTurn || currentGrandmaMeter < maxGrandmaMeter) return;
@@ -160,26 +147,17 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         currentGrandmaMeter = 0;
         OnMeterUpdated?.Invoke(currentGrandmaMeter, maxGrandmaMeter);
 
-        // The Fallback Logic
-        if (characterAnimator != null)
-        {
-            // Changed from GrannyAttack to the new unique special trigger
-            characterAnimator.SetTrigger("GrannySpecial");
-        }
-        else
-        {
-            ExecuteSpecialDamage(); // No animator? Just hit them instantly!
-        }
+        if (characterAnimator != null) characterAnimator.SetTrigger("GrannySpecial");
+        else ExecuteSpecialDamage();
     }
 
     /// <summary>
-    /// Evaluates if the player took damage to trigger the appropriate reaction.
+    /// Evaluates if the player sustained damage to trigger the appropriate reaction animation.
     /// </summary>
-    /// <param name="current">The current hit points broadcasted by the health script.</param>
-    /// <param name="max">The maximum hit points broadcasted by the health script.</param>
+    /// <param name="current">The current hit points broadcasted by the listener.</param>
+    /// <param name="max">The maximum hit points broadcasted by the listener.</param>
     private void HandleHealthChanged(float current, float max)
     {
-        // If current health is lower than it was previously, we took damage.
         if (current < previousHealth && characterAnimator != null)
         {
             characterAnimator.SetTrigger("GrannyHurt");
@@ -187,41 +165,55 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         previousHealth = current;
     }
 
-    /// <summary>
-    /// Triggers the terminal animation sequence upon health reaching zero.
-    /// </summary>
+    /// <summary>Triggers the terminal animation sequence upon health reaching zero.</summary>
     private void HandleDeath()
     {
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyDeath");
     }
 
     /// <summary>
-    /// Executes the damage application for a basic attack.
+    /// Calculates RNG-based damage output and evaluates critical hit logic.
     /// </summary>
-    /// <remarks>
-    /// <c>ExecuteMeleeDamage</c> MUST be triggered via a Unity Animation Event on the specific impact frame of the animation clip.
-    /// </remarks>
+    /// <param name="min">The minimum boundary for the damage roll.</param>
+    /// <param name="max">The maximum boundary for the damage roll.</param>
+    /// <param name="isCrit">An out parameter that returns <c>true</c> if the calculation resulted in a critical hit.</param>
+    /// <returns>Returns the final calculated float damage value.</returns>
+    private float CalculateDamage(float min, float max, out bool isCrit)
+    {
+        float damage = Random.Range(min, max);
+        isCrit = Random.value <= critChance;
+
+        if (isCrit)
+        {
+            damage *= critMultiplier;
+        }
+
+        return damage;
+    }
+
+    /// <summary>Executes the mathematical damage application for a basic attack.</summary>
+    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
     public void ExecuteMeleeDamage()
     {
-        enemyHealth.TakeDamage(caneDamage);
+        float finalDamage = CalculateDamage(minCaneDamage, maxCaneDamage, out bool isCrit);
+        enemyHealth.TakeDamage(finalDamage, isCrit);
+
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
     }
 
-    /// <summary>
-    /// Executes the damage application for the ultimate attack.
-    /// </summary>
+    /// <summary>Executes the mathematical damage application for the ultimate attack.</summary>
     public void ExecuteSpecialDamage()
     {
-        enemyHealth.TakeDamage(purseSlamDamage);
+        float finalDamage = CalculateDamage(minPurseDamage, maxPurseDamage, out bool isCrit);
+        enemyHealth.TakeDamage(finalDamage, isCrit);
+
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
     }
 
-    /// <summary>
-    /// Modifies the ultimate meter and broadcasts the change.
-    /// </summary>
-    /// <param name="amount">The integer <paramref name="amount"/> to add to the meter.</param>
+    /// <summary>Modifies the ultimate meter logic and broadcasts the updated state.</summary>
+    /// <param name="amount">The integer <paramref name="amount"/> to append to the current meter.</param>
     private void UpdateGrandmaMeter(int amount)
     {
         currentGrandmaMeter += amount;
@@ -229,25 +221,23 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         OnMeterUpdated?.Invoke(currentGrandmaMeter, maxGrandmaMeter);
     }
 
-    /// <summary>
-    /// Concludes the player's action phase and passes control to the enemy.
-    /// </summary>
+    /// <summary>Concludes the protagonist's action phase and passes control to the antagonist.</summary>
     private void EndTurn()
     {
         turnManager.SwitchTurn(TurnState.EnemyTurn);
     }
 
     /// <summary>
-    /// A generic utility demonstrating advanced type extraction for localized components.
+    /// A generic utility demonstrating advanced type extraction for localized component architecture.
     /// </summary>
-    /// <typeparam name="T">The component type to extract.</typeparam>
-    /// <returns>Returns the component of type <typeparamref name="T"/> attached to this object.</returns>
-    /// <exception cref="System.NullReferenceException">Thrown if the component cannot be found.</exception>
+    /// <typeparam name="T">The specific component type to extract.</typeparam>
+    /// <returns>Returns the component of type <typeparamref name="T"/> attached to this object instance.</returns>
+    /// <exception cref="System.NullReferenceException">Thrown if the specified component type cannot be located.</exception>
     public T GetComponentSafely<T>() where T : Component
     {
         if (!TryGetComponent<T>(out T component))
         {
-            throw new System.NullReferenceException($"Component {typeof(T)} not found.");
+            throw new System.NullReferenceException($"Component {typeof(T)} not found on target object.");
         }
         return component;
     }
