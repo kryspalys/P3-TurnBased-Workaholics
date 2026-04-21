@@ -32,9 +32,17 @@ public class Health : MonoBehaviour, ITurnListener
     /// <summary>Internal flag to determine if the entity is currently mitigating incoming damage.</summary>
     private bool isDefending = false;
 
+    /// <summary>Exposes the current raw hit point value.</summary>
+    /// <value>The current HP as a float.</value>
+    public float CurrentHealth => currentHealth;
+
     [Header("Broadcasting Events")]
     /// <summary>Event fired whenever health increases or decreases. Passes current and max health for UI sliders.</summary>
     public UnityEvent<float, float> OnHealthChanged;
+
+    [Header("Dependencies")]
+    /// <summary>Reference to the global turn authority used to expire per-turn buffs.</summary>
+    [SerializeField] private TurnManager turnManager;
 
     /// <summary>Event fired when damage is successfully applied. Passes the damage amount and critical hit status for floating text.</summary>
     public UnityEvent<float, bool> OnDamageTaken;
@@ -116,12 +124,47 @@ public class Health : MonoBehaviour, ITurnListener
         return currentHealth / maxHealth;
     }
 
+    /// <summary>
+    /// Subscribes to the global turn authority so this entity can react to state transitions.
+    /// </summary>
+    /// <remarks>
+    /// <para>The <see cref="ITurnListener"/> contract requires this component to respond when the combat phase changes —
+    /// specifically, to expire the one-turn <see cref="isDefending"/> buff at the start of each new player turn.</para>
+    /// <para>Subscription happens in <c>OnEnable</c> rather than <c>Awake</c> so that the listener chain is correctly
+    /// re-established if the GameObject is ever deactivated and reactivated at runtime.</para>
+    /// </remarks>
+    private void OnEnable()
+    {
+        if (turnManager != null) turnManager.OnTurnChanged.AddListener(OnTurnStateChanged);
+    }
+
+    /// <summary>
+    /// Unsubscribes from the turn authority to prevent memory leaks and ghost invocations.
+    /// </summary>
+    /// <remarks>
+    /// Mirrors the subscription in <see cref="OnEnable"/>. Failing to remove listeners when a component is disabled
+    /// or destroyed is a common source of <see cref="System.NullReferenceException"/> in Unity event-driven architectures,
+    /// because Unity will continue broadcasting to destroyed targets until the event is manually cleaned up.
+    /// </remarks>
+    private void OnDisable()
+    {
+        if (turnManager != null) turnManager.OnTurnChanged.RemoveListener(OnTurnStateChanged);
+    }
+
     /// <inheritdoc/>
     public void OnTurnStateChanged(CombatSettings.TurnState newState)
     {
+        // Defense is a one-turn buff — expire it whenever a new player turn begins,
+        // regardless of whether the enemy actually attacked last turn.
+
+        if (newState == CombatSettings.TurnState.PlayerTurn)
+            {
+                isDefending = false;
+            }
+
         if (newState == CombatSettings.TurnState.GameOver)
-        {
-            isDefending = false;
-        }
+            {
+                isDefending = false;
+            }
     }
 }

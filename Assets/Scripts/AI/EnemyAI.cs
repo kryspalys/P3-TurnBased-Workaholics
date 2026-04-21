@@ -93,6 +93,15 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         }
     }
 
+    /// <remarks>Now HandleHealthChanged compares against the actual starting HP, 
+    /// so the "did I take damage" check is correct from the very first event — 
+    /// not accidentally correct because 0 happens to be less than any positive HP value.</remarks>
+    
+    private void Start()
+        {
+            if (enemyHealth != null) previousHealth = enemyHealth.CurrentHealth;
+        }
+
     /// <summary>Unsubscribes from events to prevent memory leaks upon disable or destruction.</summary>
     private void OnDisable()
     {

@@ -12,10 +12,10 @@ public class UIBarUpdater : MonoBehaviour
     /// <summary>Caches the slider component automatically.</summary>
     private void Awake()
     {
-        if (targetSlider == null)
-        {
-            targetSlider = GetComponent<Slider>();
-        }
+        if (targetSlider == null && !TryGetComponent<Slider>(out targetSlider))
+            {
+                Debug.LogError($"{name}: No Slider assigned and none found on this GameObject.", this);
+            }
     }
 
     /// <summary>

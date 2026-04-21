@@ -16,6 +16,11 @@ public interface IPauseManager
     /// Executes a transition back to the primary title screen.
     /// </summary>
     void QuitToMainMenu();
+
+    /// <summary>
+    /// Executes the termination sequence for the application.
+    /// </summary>
+    void QuitGame();
 }
 
 /// <summary>

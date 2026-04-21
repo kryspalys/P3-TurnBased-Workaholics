@@ -41,17 +41,27 @@ public class FloatingTextSpawner : MonoBehaviour, ITextSpawner
     private Health healthComponent;
 
     /// <summary>
-    /// Locates and caches the sibling health component, validating prefab assignments.
+    /// Validates prefab assignments and caches the sibling health component.
     /// </summary>
-    /// <exception cref="System.NullReferenceException">Thrown if the required prefab is not assigned in the Unity Inspector.</exception>
+    /// <remarks>
+    /// If the <see cref="damagePopupPrefab"/> is unassigned or the required <see cref="Health"/> component
+    /// cannot be located, an error is logged to the Unity Console and the script disables itself to prevent
+    /// cascading null-reference failures in <see cref="OnEnable"/>.
+    /// </remarks>
     private void Awake()
     {
         if (damagePopupPrefab == null)
         {
-            throw new System.NullReferenceException("Critical Error: DamagePopup Prefab is missing from the spawner component.");
+            Debug.LogError($"{name}: DamagePopup Prefab is missing from the spawner component.", this);
+            enabled = false;
+            return;
         }
 
-        healthComponent = GetComponent<Health>();
+        if (!TryGetComponent<Health>(out healthComponent))
+        {
+            Debug.LogError($"{name}: Health component missing on this GameObject.", this);
+            enabled = false;
+        }
     }
 
     /// <summary>

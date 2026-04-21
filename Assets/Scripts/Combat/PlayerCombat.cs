@@ -88,6 +88,17 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         }
     }
 
+   /// <summary>Now HandleHealthChanged compares against the actual starting HP, 
+   /// so the "did I take damage" check is correct from the very first event — 
+   /// not accidentally correct because 0 happens to be less than any positive HP value.</summary>
+
+    private void Start()
+    {
+       
+        if (playerHealth != null) previousHealth = playerHealth.CurrentHealth;
+    
+    }
+
     /// <summary>Subscribes to the local health component to listen for vital events.</summary>
     private void OnEnable()
     {

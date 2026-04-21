@@ -33,6 +33,8 @@ public interface IMenuManager
 /// // Example of internal usage:
 /// myMenuManager.StartGame();
 /// </code>
+/// </example>
+/// </remarks>
 
 public class MainMenuManager : MonoBehaviour, IMenuManager
 {
