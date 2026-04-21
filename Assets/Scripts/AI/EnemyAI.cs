@@ -61,6 +61,19 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>Amount of hit points restored when the defensive threshold is met.</summary>
     [SerializeField] private float howlHealAmount = 20f;
 
+    [Header("Heal Restrictions")]
+    /// <summary>Maximum number of times the heal ability can be used in a single combat encounter.</summary>
+    [SerializeField] private int maxHealUses = 2;
+
+    /// <summary>Number of enemy turns that must elapse between heal uses.</summary>
+    [SerializeField] private int healCooldownTurns = 3;
+
+    /// <summary>Tracks remaining heal uses for this fight. Decrements on each successful heal.</summary>
+    private int healUsesRemaining;
+
+    /// <summary>Tracks the cooldown counter. Decrements at the start of each enemy turn; heal is locked until this reaches zero.</summary>
+    private int healCooldownRemaining = 0;
+
     [Header("Broadcasting Events")]
     /// <summary>Broadcasts the AI's intended action as a text string to the UI listener.</summary>
     public UnityEvent<string> OnAIDecisionMade;
@@ -75,10 +88,17 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <value>Returns a float representing the base <c>minClawDamage</c>.</value>
     public float BaseDamage => minClawDamage;
 
+    /// <summary>Broadcasts the current and maximum heal uses whenever the potion count changes. Used by UI listeners.</summary>
+    public UnityEvent<int, int> OnHealUsesChanged;
+
+    /// <summary>Broadcasts the current and maximum cooldown whenever the cooldown state changes. Used by UI listeners.</summary>
+    public UnityEvent<int, int> OnHealCooldownChanged;
+
     /// <summary>Caches components prior to first frame execution.</summary>
     private void Awake()
     {
         TryGetComponent<Animator>(out aiAnimator);
+        healUsesRemaining = maxHealUses;
     }
 
     /// <summary>Subscribes to turn management and health events to establish the listener chain.</summary>
@@ -96,10 +116,13 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <remarks>Now HandleHealthChanged compares against the actual starting HP, 
     /// so the "did I take damage" check is correct from the very first event — 
     /// not accidentally correct because 0 happens to be less than any positive HP value.</remarks>
+    /// <summary>Broadcasts the initial heal state after all other components' Awake calls have resolved.</summary>
     
     private void Start()
         {
             if (enemyHealth != null) previousHealth = enemyHealth.CurrentHealth;
+            OnHealUsesChanged?.Invoke(healUsesRemaining, maxHealUses);
+            OnHealCooldownChanged?.Invoke(healCooldownRemaining, healCooldownTurns);
         }
 
     /// <summary>Unsubscribes from events to prevent memory leaks upon disable or destruction.</summary>
@@ -149,33 +172,54 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     }
 
     /// <summary>
-    /// Coroutine that evaluates battlefield conditions and selects an optimal move based on hardcoded thresholds.
+    /// Evaluates battlefield conditions and selects an action based on thresholds and resource constraints.
     /// </summary>
-    /// <returns>An <see cref="IEnumerator"/> handling the execution delay to simulate thought.</returns>
+    /// <remarks>
+    /// <para>Decision priorities, in order:</para>
+    /// <list type="number">
+    /// <item><description>If the player is at critical HP (&lt; 30%), lunge for a heavy bite to secure the kill.</description></item>
+    /// <item><description>Otherwise, if own HP is low (&lt; 50%) AND heal is off cooldown AND uses remain, self-heal.</description></item>
+    /// <item><description>Otherwise, use a standard claw attack.</description></item>
+    /// </list>
+    /// </remarks>
+    /// <returns>An <see cref="IEnumerator"/> handling the deliberation delay.</returns>
     private IEnumerator ExecuteEnemyTurnSequence()
     {
+        // Simulate deliberation time with a brief pause before executing the decision.
         yield return new WaitForSeconds(1.5f);
+
+    // Tick the cooldown down at the start of each enemy turn before evaluating decisions.
+        if (healCooldownRemaining > 0)
+        {
+            healCooldownRemaining--;
+            OnHealCooldownChanged?.Invoke(healCooldownRemaining, healCooldownTurns);
+        }
+
+        bool canHeal = healUsesRemaining > 0 && healCooldownRemaining <= 0;
 
         if (playerHealth.GetHealthPercentage() < 0.3f)
         {
             OnAIDecisionMade?.Invoke("The Beast lunges for a heavy bite!");
-
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
             else ExecuteHeavyDamage();
         }
-        else if (enemyHealth.GetHealthPercentage() < 0.5f)
+        else if (enemyHealth.GetHealthPercentage() < 0.5f && canHeal)
         {
             OnAIDecisionMade?.Invoke("The Beast howls, regenerating health!");
-
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfHeal");
 
             enemyHealth.Heal(howlHealAmount);
+
+            healUsesRemaining--;
+            healCooldownRemaining = healCooldownTurns;
+            OnHealUsesChanged?.Invoke(healUsesRemaining, maxHealUses);
+            OnHealCooldownChanged?.Invoke(healCooldownRemaining, healCooldownTurns);
+
             EndAITurn();
         }
         else
         {
             OnAIDecisionMade?.Invoke("The Beast swipes its claws!");
-
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
             else ExecuteStandardDamage();
         }
