@@ -712,8 +712,28 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1925152512}
     - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: maxCaneDamage
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: minCaneDamage
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: maxPurseDamage
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
       propertyPath: cookieHealAmount
       value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: maxCookieHealAmount
+      value: 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: minCookieHealAmount
+      value: 18
       objectReference: {fileID: 0}
     - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
       propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.size
@@ -2500,6 +2520,14 @@ PrefabInstance:
       value: Wolf
       objectReference: {fileID: 0}
     - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+      propertyPath: critChance
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+      propertyPath: maxHealUses
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
       propertyPath: turnManager
       value: 
       objectReference: {fileID: 1925152512}
@@ -2507,6 +2535,26 @@ PrefabInstance:
       propertyPath: playerHealth
       value: 
       objectReference: {fileID: 275556234}
+    - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+      propertyPath: maxBiteDamage
+      value: 32
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+      propertyPath: maxClawDamage
+      value: 18
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+      propertyPath: minBiteDamage
+      value: 22
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+      propertyPath: minClawDamage
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+      propertyPath: maxHowlHealAmount
+      value: 35
+      objectReference: {fileID: 0}
     - target: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
       propertyPath: OnHealUsesChanged.m_PersistentCalls.m_Calls.Array.size
       value: 1
