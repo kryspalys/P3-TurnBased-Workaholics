@@ -716,9 +716,37 @@ PrefabInstance:
       value: 10
       objectReference: {fileID: 0}
     - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
       propertyPath: OnMeterUpdated.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 440540731}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1830360186}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: LockPlayerButtons
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: CombatUIManager, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 6189811761330307160, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
+      propertyPath: OnActionStarted.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 9090469562103225584, guid: aa64b8cf524f396428c07ca313d8c398, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5
