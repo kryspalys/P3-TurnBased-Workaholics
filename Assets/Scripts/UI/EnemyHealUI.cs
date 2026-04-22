@@ -81,7 +81,8 @@ public class EnemyHealUI : MonoBehaviour
 
         if (cooldownText != null)
         {
-            cooldownText.text = current.ToString();
+            string turnWord = (current == 1) ? "turn" : "turns";
+            cooldownText.text = $"{current} {turnWord}\nuntil heal";
         }
     }
 }
