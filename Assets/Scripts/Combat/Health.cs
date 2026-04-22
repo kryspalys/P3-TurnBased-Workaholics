@@ -32,9 +32,16 @@ public class Health : MonoBehaviour, ITurnListener
     /// <summary>Internal flag to determine if the entity is currently mitigating incoming damage.</summary>
     private bool isDefending = false;
 
+    /// <summary>Internal multiplier determining the percentage of damage mitigated when defending.</summary>
+    private float defenseMultiplier = 0f;
+
     /// <summary>Exposes the current raw hit point value.</summary>
     /// <value>The current HP as a float.</value>
     public float CurrentHealth => currentHealth;
+
+    /// <summary>Exposes the current defensive stance.</summary>
+    /// <value>A boolean indicating if the entity is currently mitigating incoming damage.</value>
+    public bool IsDefending => isDefending;
 
     [Header("Broadcasting Events")]
     /// <summary>Event fired whenever health increases or decreases. Passes current and max health for UI sliders.</summary>
@@ -71,14 +78,14 @@ public class Health : MonoBehaviour, ITurnListener
     /// <param name="damageAmount">The raw numerical damage value to apply to the health pool.</param>
     /// <param name="isCrit">A boolean flag indicating if the incoming attack was calculated as a critical hit.</param>
     /// <remarks>
-    /// If the <see cref="isDefending"/> flag evaluates to <c>true</c>, the <paramref name="damageAmount"/> is immediately reduced by 50%.
+    /// If the <see cref="isDefending"/> flag evaluates to <c>true</c>, the <paramref name="damageAmount"/> is reduced by the stored <see cref="defenseMultiplier"/>.
     /// </remarks>
     public void TakeDamage(float damageAmount, bool isCrit = false)
     {
         if (isDefending)
         {
-            damageAmount *= 0.5f;
-            isDefending = false;
+            // If the multiplier is 0.75f, you mitigate 75%, meaning you only take 25% of the damage.
+            damageAmount *= (1f - defenseMultiplier);
         }
 
         currentHealth -= damageAmount;
@@ -103,16 +110,18 @@ public class Health : MonoBehaviour, ITurnListener
         currentHealth = Mathf.Clamp(currentHealth, 0, maxHealth);
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        OnHealed?.Invoke(healAmount); // Broadcast the new healing event!
+        OnHealed?.Invoke(healAmount);
     }
 
     /// <summary>
-    /// Toggles the entity's defensive multiplier flag.
+    /// Toggles the entity's defensive state and sets the specific mitigation strength.
     /// </summary>
     /// <param name="state">Pass <c>true</c> to enable defense mode; otherwise, pass <c>false</c>.</param>
-    public void SetDefending(bool state)
+    /// <param name="mitigationPercentage">The decimal percentage of damage to block (e.g., 0.5f for 50%). Defaults to 0.</param>
+    public void SetDefending(bool state, float mitigationPercentage = 0f)
     {
         isDefending = state;
+        defenseMultiplier = mitigationPercentage;
     }
 
     /// <summary>
@@ -143,8 +152,7 @@ public class Health : MonoBehaviour, ITurnListener
     /// </summary>
     /// <remarks>
     /// Mirrors the subscription in <see cref="OnEnable"/>. Failing to remove listeners when a component is disabled
-    /// or destroyed is a common source of <see cref="System.NullReferenceException"/> in Unity event-driven architectures,
-    /// because Unity will continue broadcasting to destroyed targets until the event is manually cleaned up.
+    /// or destroyed is a common source of <see cref="System.NullReferenceException"/> in Unity event-driven architectures.
     /// </remarks>
     private void OnDisable()
     {
@@ -154,17 +162,14 @@ public class Health : MonoBehaviour, ITurnListener
     /// <inheritdoc/>
     public void OnTurnStateChanged(CombatSettings.TurnState newState)
     {
-        // Defense is a one-turn buff — expire it whenever a new player turn begins,
-        // regardless of whether the enemy actually attacked last turn.
-
         if (newState == CombatSettings.TurnState.PlayerTurn)
-            {
-                isDefending = false;
-            }
+        {
+            isDefending = false;
+        }
 
         if (newState == CombatSettings.TurnState.GameOver)
-            {
-                isDefending = false;
-            }
+        {
+            isDefending = false;
+        }
     }
 }

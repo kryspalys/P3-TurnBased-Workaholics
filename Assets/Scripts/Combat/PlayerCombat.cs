@@ -43,25 +43,32 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
 
     [Header("Combat Stats & RNG")]
     /// <summary>Minimum randomized boundary for basic attack damage.</summary>
-    [SerializeField] private float minCaneDamage = 12f;
+    [SerializeField] private float minCaneDamage = 10f;
     /// <summary>Maximum randomized boundary for basic attack damage.</summary>
-    [SerializeField] private float maxCaneDamage = 20f;
+    [SerializeField] private float maxCaneDamage = 15f;
 
     /// <summary>Minimum randomized boundary for the ultimate attack damage.</summary>
     [SerializeField] private float minPurseDamage = 35f;
     /// <summary>Maximum randomized boundary for the ultimate attack damage.</summary>
-    [SerializeField] private float maxPurseDamage = 50f;
+    [SerializeField] private float maxPurseDamage = 45f;
 
     /// <summary>Probability of striking a critical hit, represented as a float between 0.0 and 1.0.</summary>
-    [SerializeField, Range(0f, 1f)] private float critChance = 0.15f;
+    [SerializeField, Range(0f, 1f)] private float critChance = 0.10f;
     /// <summary>The scaling multiplier applied to the base damage upon a successful critical hit.</summary>
     [SerializeField] private float critMultiplier = 1.5f;
 
     /// <summary>Minimum boundary for hit points restored by the healing action.</summary>
-    [SerializeField] private float minCookieHealAmount = 15f;
+    [SerializeField] private float minCookieHealAmount = 18f;
     /// <summary>Maximum boundary for hit points restored by the healing action.</summary>
-    [SerializeField] private float maxCookieHealAmount = 30f;
+    [SerializeField] private float maxCookieHealAmount = 25f;
 
+    [Header("Defense Stats & RNG")]
+    /// <summary>Minimum percentage of incoming damage mitigated when blocking (e.g. 0.5 = 50%).</summary>
+    [SerializeField, Range(0f, 1f)] private float minBlockMitigation = 0.5f;
+    /// <summary>Maximum percentage of incoming damage mitigated when blocking (e.g. 1.0 = 100%).</summary>
+    [SerializeField, Range(0f, 1f)] private float maxBlockMitigation = 1.0f;
+
+    [Header("Ability Meter")]
     /// <summary>The maximum capacity of the ultimate ability meter.</summary>
     [SerializeField] private int maxGrandmaMeter = 3;
 
@@ -128,7 +135,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <summary>
-    /// Intercepts state changes to unlock actions when the player's turn begins.
+    /// Intercepts state changes to unlock actions and reset stances when the player's turn begins.
     /// </summary>
     /// <param name="newState">The newly broadcasted state from the turn manager.</param>
     private void HandleTurnChange(TurnState newState)
@@ -136,6 +143,8 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         if (newState == TurnState.PlayerTurn)
         {
             isActionLocked = false;
+
+            if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         }
     }
 
@@ -185,11 +194,17 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <summary>
-    /// Applies the internal lock flag and broadcasts the UI lock event.
+    /// Applies the internal lock flag, clears lingering animator triggers, and broadcasts the UI lock event.
     /// </summary>
     private void LockAction()
     {
         isActionLocked = true;
+
+        if (characterAnimator != null)
+        {
+            characterAnimator.ResetTrigger("GrannyIdle");
+        }
+
         OnActionStarted?.Invoke();
     }
 
@@ -200,7 +215,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <param name="max">The maximum hit points broadcasted by the listener.</param>
     private void HandleHealthChanged(float current, float max)
     {
-        if (current < previousHealth && characterAnimator != null)
+        if (current < previousHealth && characterAnimator != null && !playerHealth.IsDefending)
         {
             characterAnimator.SetTrigger("GrannyHurt");
         }
@@ -270,9 +285,10 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
     public void ExecuteBlock()
     {
-        playerHealth.SetDefending(true);
+        if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
-        if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
+        float randomMitigation = Random.Range(minBlockMitigation, maxBlockMitigation);
+        playerHealth.SetDefending(true, randomMitigation);
         EndTurn();
     }
 

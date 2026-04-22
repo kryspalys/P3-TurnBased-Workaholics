@@ -44,24 +44,24 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
 
     [Header("Combat Stats & RNG")]
     /// <summary>Minimum randomized boundary for basic attack damage.</summary>
-    [SerializeField] private float minClawDamage = 8f;
+    [SerializeField] private float minClawDamage = 12f;
     /// <summary>Maximum randomized boundary for basic attack damage.</summary>
-    [SerializeField] private float maxClawDamage = 15f;
+    [SerializeField] private float maxClawDamage = 18f;
 
     /// <summary>Minimum randomized boundary for the threshold aggressive attack.</summary>
-    [SerializeField] private float minBiteDamage = 18f;
+    [SerializeField] private float minBiteDamage = 22f;
     /// <summary>Maximum randomized boundary for the threshold aggressive attack.</summary>
-    [SerializeField] private float maxBiteDamage = 28f;
+    [SerializeField] private float maxBiteDamage = 32f;
 
     /// <summary>Probability of striking a critical hit, represented as a float between 0.0 and 1.0.</summary>
-    [SerializeField, Range(0f, 1f)] private float critChance = 0.15f;
+    [SerializeField, Range(0f, 1f)] private float critChance = 0.10f;
     /// <summary>The scaling multiplier applied to the base damage upon a successful critical hit.</summary>
     [SerializeField] private float critMultiplier = 1.5f;
 
     /// <summary>Minimum amount of hit points restored when the defensive threshold is met.</summary>
-    [SerializeField] private float minHowlHealAmount = 15f;
+    [SerializeField] private float minHowlHealAmount = 25f;
     /// <summary>Maximum amount of hit points restored when the defensive threshold is met.</summary>
-    [SerializeField] private float maxHowlHealAmount = 28f;
+    [SerializeField] private float maxHowlHealAmount = 35f;
 
     [Header("Heal Restrictions")]
     /// <summary>Maximum number of times the heal ability can be used in a single combat encounter.</summary>
@@ -142,6 +142,8 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <param name="newState">The newly broadcasted state from the turn manager.</param>
     private void HandleTurnChange(TurnState newState)
     {
+        Debug.Log($"[TRACE 3] EnemyAI heard Turn Change: {newState}");
+
         if (newState == TurnState.EnemyTurn)
         {
             StartCoroutine(ExecuteEnemyTurnSequence());
@@ -184,13 +186,10 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <returns>An <see cref="IEnumerator"/> handling the deliberation delay.</returns>
     private IEnumerator ExecuteEnemyTurnSequence()
     {
-        // Simulate deliberation time with a brief pause before executing the decision.
         yield return new WaitForSeconds(1.5f);
 
-        // Security check: If the game ended or phase changed during the wait, abort logic.
         if (turnManager.CurrentTurn != TurnState.EnemyTurn) yield break;
 
-        // Tick the cooldown down at the start of each enemy turn before evaluating decisions.
         if (healCooldownRemaining > 0)
         {
             healCooldownRemaining--;
@@ -202,7 +201,8 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         if (playerHealth.GetHealthPercentage() < 0.3f)
         {
             OnAIDecisionMade?.Invoke("The Beast lunges for a heavy bite!");
-            if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
+            // BUG FIX: Changed from "WolfAttack" to "WolfBite" so it uses the correct animation and event!
+            if (aiAnimator != null) aiAnimator.SetTrigger("WolfBite");
             else ExecuteHeavyDamage();
         }
         else if (enemyHealth.GetHealthPercentage() < 0.5f && canHeal)

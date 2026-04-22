@@ -146,6 +146,7 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
+  turnManager: {fileID: 0}
   OnDamageTaken:
     m_PersistentCalls:
       m_Calls: []
@@ -194,13 +195,16 @@ MonoBehaviour:
   turnManager: {fileID: 0}
   enemyHealth: {fileID: 7914918721486068240}
   playerHealth: {fileID: 0}
-  minClawDamage: 8
-  maxClawDamage: 15
-  minBiteDamage: 18
-  maxBiteDamage: 28
-  critChance: 0.15
+  minClawDamage: 12
+  maxClawDamage: 18
+  minBiteDamage: 22
+  maxBiteDamage: 32
+  critChance: 0.1
   critMultiplier: 1.5
-  howlHealAmount: 20
+  minHowlHealAmount: 15
+  maxHowlHealAmount: 35
+  maxHealUses: 2
+  healCooldownTurns: 3
   OnAIDecisionMade:
     m_PersistentCalls:
       m_Calls:
@@ -208,6 +212,36 @@ MonoBehaviour:
         m_TargetAssemblyTypeName: CombatUIManager, Assembly-CSharp
         m_MethodName: UpdateAILog
         m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnHealUsesChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: EnemyHealUI, Assembly-CSharp
+        m_MethodName: UpdatePotions
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnHealCooldownChanged:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: EnemyHealUI, Assembly-CSharp
+        m_MethodName: UpdateCooldown
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
