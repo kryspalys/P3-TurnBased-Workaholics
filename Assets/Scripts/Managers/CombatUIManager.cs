@@ -49,6 +49,17 @@ public class CombatUIManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Instantly forces all player buttons into an inactive state to prevent duplicate inputs.
+    /// </summary>
+    /// <remarks>
+    /// <para>Designed to be triggered immediately when the player initiates an action, bridging the gap before the formal turn change.</para>
+    /// </remarks>
+    public void LockPlayerButtons()
+    {
+        SetPlayerButtonsInteractable(false);
+    }
+
+    /// <summary>
     /// Updates the on-screen combat log with the AI's chosen action.
     /// </summary>
     /// <param name="message">The string representation of the AI's intent.</param>

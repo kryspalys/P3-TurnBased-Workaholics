@@ -30,6 +30,11 @@ public class TurnManager : MonoBehaviour, ITurnManager
     /// </summary>
     [SerializeField] private TurnState currentTurnState = TurnState.PlayerTurn;
 
+    /// <summary>
+    /// Internal flag to track if the initial state broadcast has occurred, preventing redundant updates.
+    /// </summary>
+    private bool hasInitialized = false;
+
     [Header("Broadcasting Events")]
     /// <summary>
     /// Broadcasts an event containing the new <see cref="TurnState"/> whenever the state mutates.
@@ -52,12 +57,17 @@ public class TurnManager : MonoBehaviour, ITurnManager
 
     /// <inheritdoc/>
     /// <remarks>
-    /// If the <paramref name="newState"/> or the <see cref="currentTurnState"/> is evaluated as <c>TurnState.GameOver</c>, further transitions are permanently blocked.
+    /// <para>If the <paramref name="newState"/> or the <see cref="currentTurnState"/> is evaluated as <c>TurnState.GameOver</c>, further transitions are permanently blocked.</para>
+    /// <para>Includes a safeguard to prevent consecutive broadcasts of the same state, which averts duplicate routine execution.</para>
     /// </remarks>
     public void SwitchTurn(TurnState newState)
     {
         if (currentTurnState == TurnState.GameOver) return;
 
+        // BUG FIX: Prevent the turn manager from firing the same turn twice in a row.
+        if (hasInitialized && currentTurnState == newState) return;
+
+        hasInitialized = true;
         currentTurnState = newState;
         OnTurnChanged?.Invoke(currentTurnState);
     }

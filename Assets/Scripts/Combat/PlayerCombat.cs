@@ -57,8 +57,11 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <summary>The scaling multiplier applied to the base damage upon a successful critical hit.</summary>
     [SerializeField] private float critMultiplier = 1.5f;
 
-    /// <summary>Raw hit points restored by the healing action.</summary>
-    [SerializeField] private float cookieHealAmount = 25f;
+    /// <summary>Minimum boundary for hit points restored by the healing action.</summary>
+    [SerializeField] private float minCookieHealAmount = 15f;
+    /// <summary>Maximum boundary for hit points restored by the healing action.</summary>
+    [SerializeField] private float maxCookieHealAmount = 30f;
+
     /// <summary>The maximum capacity of the ultimate ability meter.</summary>
     [SerializeField] private int maxGrandmaMeter = 3;
 
@@ -67,9 +70,15 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <summary>Tracks hit points internally to determine if damage was taken during a turn cycle.</summary>
     private float previousHealth;
 
+    /// <summary>Internal flag to prevent the player from spamming actions during a single turn.</summary>
+    private bool isActionLocked = false;
+
     [Header("Broadcasting Events")]
     /// <summary>Broadcasts state changes to the ultimate meter for UI slider updates.</summary>
     public UnityEvent<int, int> OnMeterUpdated;
+
+    /// <summary>Broadcasts instantly when an action is selected to notify the UI to lock buttons.</summary>
+    public UnityEvent OnActionStarted;
 
     /// <summary>The animator component driving visual feedback states.</summary>
     private Animator characterAnimator;
@@ -88,20 +97,17 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         }
     }
 
-   /// <summary>Now HandleHealthChanged compares against the actual starting HP, 
-   /// so the "did I take damage" check is correct from the very first event — 
-   /// not accidentally correct because 0 happens to be less than any positive HP value.</summary>
-
+    /// <summary>Initializes tracking values against actual starting HP.</summary>
     private void Start()
     {
-       
         if (playerHealth != null) previousHealth = playerHealth.CurrentHealth;
-    
     }
 
-    /// <summary>Subscribes to the local health component to listen for vital events.</summary>
+    /// <summary>Subscribes to turn and health events.</summary>
     private void OnEnable()
     {
+        if (turnManager != null) turnManager.OnTurnChanged.AddListener(HandleTurnChange);
+
         if (playerHealth != null)
         {
             playerHealth.OnHealthChanged.AddListener(HandleHealthChanged);
@@ -112,6 +118,8 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <summary>Unsubscribes from events to prevent memory degradation.</summary>
     private void OnDisable()
     {
+        if (turnManager != null) turnManager.OnTurnChanged.RemoveListener(HandleTurnChange);
+
         if (playerHealth != null)
         {
             playerHealth.OnHealthChanged.RemoveListener(HandleHealthChanged);
@@ -119,10 +127,23 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         }
     }
 
+    /// <summary>
+    /// Intercepts state changes to unlock actions when the player's turn begins.
+    /// </summary>
+    /// <param name="newState">The newly broadcasted state from the turn manager.</param>
+    private void HandleTurnChange(TurnState newState)
+    {
+        if (newState == TurnState.PlayerTurn)
+        {
+            isActionLocked = false;
+        }
+    }
+
     /// <inheritdoc/>
     public void Action_CaneWhack()
     {
-        if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
+        if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked) return;
+        LockAction();
 
         UpdateGrandmaMeter(1);
 
@@ -133,33 +154,43 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <summary>Initiates the defensive block sequence and concludes the player phase.</summary>
     public void Action_KnittingShield()
     {
-        if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
+        if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked) return;
+        LockAction();
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyBlock");
-        playerHealth.SetDefending(true);
-        EndTurn();
+        else ExecuteBlock();
     }
 
     /// <summary>Initiates the healing sequence and concludes the player phase.</summary>
     public void Action_BakeCookies()
     {
-        if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
+        if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked) return;
+        LockAction();
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyHeal");
-        playerHealth.Heal(cookieHealAmount);
-        EndTurn();
+        else ExecuteHeal();
     }
 
     /// <summary>Initiates the ultimate attack sequence if the meter is fully charged.</summary>
     public void Action_PurseSlam()
     {
-        if (turnManager.CurrentTurn != TurnState.PlayerTurn || currentGrandmaMeter < maxGrandmaMeter) return;
+        if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked || currentGrandmaMeter < maxGrandmaMeter) return;
+        LockAction();
 
         currentGrandmaMeter = 0;
         OnMeterUpdated?.Invoke(currentGrandmaMeter, maxGrandmaMeter);
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannySpecial");
         else ExecuteSpecialDamage();
+    }
+
+    /// <summary>
+    /// Applies the internal lock flag and broadcasts the UI lock event.
+    /// </summary>
+    private void LockAction()
+    {
+        isActionLocked = true;
+        OnActionStarted?.Invoke();
     }
 
     /// <summary>
@@ -214,10 +245,32 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <summary>Executes the mathematical damage application for the ultimate attack.</summary>
+    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
     public void ExecuteSpecialDamage()
     {
         float finalDamage = CalculateDamage(minPurseDamage, maxPurseDamage, out bool isCrit);
         enemyHealth.TakeDamage(finalDamage, isCrit);
+
+        if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
+        EndTurn();
+    }
+
+    /// <summary>Executes the mathematical healing logic.</summary>
+    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
+    public void ExecuteHeal()
+    {
+        float finalHeal = Random.Range(minCookieHealAmount, maxCookieHealAmount);
+        playerHealth.Heal(finalHeal);
+
+        if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
+        EndTurn();
+    }
+
+    /// <summary>Executes the mathematical defense buff logic.</summary>
+    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
+    public void ExecuteBlock()
+    {
+        playerHealth.SetDefending(true);
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();

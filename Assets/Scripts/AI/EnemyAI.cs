@@ -58,8 +58,10 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>The scaling multiplier applied to the base damage upon a successful critical hit.</summary>
     [SerializeField] private float critMultiplier = 1.5f;
 
-    /// <summary>Amount of hit points restored when the defensive threshold is met.</summary>
-    [SerializeField] private float howlHealAmount = 20f;
+    /// <summary>Minimum amount of hit points restored when the defensive threshold is met.</summary>
+    [SerializeField] private float minHowlHealAmount = 15f;
+    /// <summary>Maximum amount of hit points restored when the defensive threshold is met.</summary>
+    [SerializeField] private float maxHowlHealAmount = 28f;
 
     [Header("Heal Restrictions")]
     /// <summary>Maximum number of times the heal ability can be used in a single combat encounter.</summary>
@@ -113,17 +115,14 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         }
     }
 
-    /// <remarks>Now HandleHealthChanged compares against the actual starting HP, 
-    /// so the "did I take damage" check is correct from the very first event — 
-    /// not accidentally correct because 0 happens to be less than any positive HP value.</remarks>
     /// <summary>Broadcasts the initial heal state after all other components' Awake calls have resolved.</summary>
-    
+    /// <remarks>Now HandleHealthChanged compares against the actual starting HP.</remarks>
     private void Start()
-        {
-            if (enemyHealth != null) previousHealth = enemyHealth.CurrentHealth;
-            OnHealUsesChanged?.Invoke(healUsesRemaining, maxHealUses);
-            OnHealCooldownChanged?.Invoke(healCooldownRemaining, healCooldownTurns);
-        }
+    {
+        if (enemyHealth != null) previousHealth = enemyHealth.CurrentHealth;
+        OnHealUsesChanged?.Invoke(healUsesRemaining, maxHealUses);
+        OnHealCooldownChanged?.Invoke(healCooldownRemaining, healCooldownTurns);
+    }
 
     /// <summary>Unsubscribes from events to prevent memory leaks upon disable or destruction.</summary>
     private void OnDisable()
@@ -188,7 +187,10 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         // Simulate deliberation time with a brief pause before executing the decision.
         yield return new WaitForSeconds(1.5f);
 
-    // Tick the cooldown down at the start of each enemy turn before evaluating decisions.
+        // Security check: If the game ended or phase changed during the wait, abort logic.
+        if (turnManager.CurrentTurn != TurnState.EnemyTurn) yield break;
+
+        // Tick the cooldown down at the start of each enemy turn before evaluating decisions.
         if (healCooldownRemaining > 0)
         {
             healCooldownRemaining--;
@@ -208,7 +210,8 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
             OnAIDecisionMade?.Invoke("The Beast howls, regenerating health!");
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfHeal");
 
-            enemyHealth.Heal(howlHealAmount);
+            float finalHeal = Random.Range(minHowlHealAmount, maxHowlHealAmount);
+            enemyHealth.Heal(finalHeal);
 
             healUsesRemaining--;
             healCooldownRemaining = healCooldownTurns;
