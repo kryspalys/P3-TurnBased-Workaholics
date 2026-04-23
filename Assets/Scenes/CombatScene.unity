@@ -3885,73 +3885,73 @@ MonoBehaviour:
   sfxPoolSize: 4
   masterSfxVolume: 1
   caneWhackSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 2001172a0ddc463449e395ff6c123f91, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   purseSlamSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: f32a181384b14814d951fbc1cfb1c847, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   knittingShieldSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 31775570a314ddb459d1ce27d5e43a4f, type: 3}
     volume: 1
     pitch: 1
-    pitchVariance: 0.05
+    pitchVariance: 0.294
   bakeCookiesSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 8f2b3437ea6b0184fbc3bba784d79d96, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   clawAttackSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: a825adb7dcae6b743b271dcd5eb72cdc, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   biteAttackSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: e709bc1bea56afb4a988a7c6ce1ea0d0, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   howlSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 4cf5cb254dce9004d925346e1ad686f4, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   playerHurtSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: ad5e44c4a8a2c1346b47a3125fc3a590, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   enemyHurtSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 2db0f0ce27e27e34bb68e54bebd39496, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   critStingerSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: fb5b4fb24d6d55345a86501c0ec1a81d, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   deathSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: 69c62d41f28f94b408e09f76e64aecd7, type: 3}
     volume: 1
     pitch: 1
     pitchVariance: 0.05
   playerTurnSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: ad07508907a18f848900242e54420ab8, type: 3}
     volume: 1
     pitch: 1
-    pitchVariance: 0.05
+    pitchVariance: 0.025
   enemyTurnSfx:
-    clip: {fileID: 0}
+    clip: {fileID: 8300000, guid: a83747df5285f734c99828fd42d7386f, type: 3}
     volume: 1
     pitch: 1
-    pitchVariance: 0.05
-  combatMusic: {fileID: 0}
-  musicVolume: 0.5
-  gameOverMusic: {fileID: 0}
+    pitchVariance: 0.025
+  combatMusic: {fileID: 8300000, guid: d4f828504d925814d99be8520016e8ba, type: 3}
+  musicVolume: 0.354
+  gameOverMusic: {fileID: 8300000, guid: 1296fe1d89655194e94441734885eb5c, type: 3}
 --- !u!1 &941650014
 GameObject:
   m_ObjectHideFlags: 0
@@ -5855,7 +5855,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1389142239
 RectTransform:
   m_ObjectHideFlags: 0

@@ -265,9 +265,9 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     public void ExecuteMeleeDamage()
     {
         float finalDamage = CalculateDamage(minCaneDamage, maxCaneDamage, out bool isCrit);
-        enemyHealth.TakeDamage(finalDamage, isCrit);
-
+        
         OnCaneWhackUsed?.Invoke();
+        enemyHealth.TakeDamage(finalDamage, isCrit);
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
@@ -278,9 +278,9 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     public void ExecuteSpecialDamage()
     {
         float finalDamage = CalculateDamage(minPurseDamage, maxPurseDamage, out bool isCrit);
-        enemyHealth.TakeDamage(finalDamage, isCrit);
-
+        
         OnPurseSlamUsed?.Invoke();
+        enemyHealth.TakeDamage(finalDamage, isCrit);
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
@@ -291,8 +291,10 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     public void ExecuteHeal()
     {
         float finalHeal = Random.Range(minCookieHealAmount, maxCookieHealAmount);
-        playerHealth.Heal(finalHeal);
+
         OnBakeCookiesUsed?.Invoke();
+        playerHealth.Heal(finalHeal);
+
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
     }
@@ -304,8 +306,10 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
         float randomMitigation = Random.Range(minBlockMitigation, maxBlockMitigation);
-        playerHealth.SetDefending(true, randomMitigation);
+        
         OnKnittingShieldUsed?.Invoke();
+        playerHealth.SetDefending(true, randomMitigation);
+        
         EndTurn();
     }
 
