@@ -80,6 +80,21 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>Broadcasts the AI's intended action as a text string to the UI listener.</summary>
     public UnityEvent<string> OnAIDecisionMade;
 
+    /// <summary>Broadcasts the current and maximum heal uses whenever the potion count changes. Used by UI listeners.</summary>
+    public UnityEvent<int, int> OnHealUsesChanged;
+
+    /// <summary>Broadcasts the current and maximum cooldown whenever the cooldown state changes. Used by UI listeners.</summary>
+    public UnityEvent<int, int> OnHealCooldownChanged;
+
+    /// <summary>Broadcast when the wolf executes a basic claw attack. Listened to by audio, VFX, etc.</summary>
+    public UnityEvent OnClawAttackUsed;
+
+    /// <summary>Broadcast when the wolf executes the heavy bite attack.</summary>
+    public UnityEvent OnBiteAttackUsed;
+
+    /// <summary>Broadcast when the wolf executes the self-heal howl.</summary>
+    public UnityEvent OnHowlUsed;
+
     /// <summary>The animator component driving the AI's visual state.</summary>
     private Animator aiAnimator;
 
@@ -89,12 +104,6 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>Exposes the current minimum configured claw damage.</summary>
     /// <value>Returns a float representing the base <c>minClawDamage</c>.</value>
     public float BaseDamage => minClawDamage;
-
-    /// <summary>Broadcasts the current and maximum heal uses whenever the potion count changes. Used by UI listeners.</summary>
-    public UnityEvent<int, int> OnHealUsesChanged;
-
-    /// <summary>Broadcasts the current and maximum cooldown whenever the cooldown state changes. Used by UI listeners.</summary>
-    public UnityEvent<int, int> OnHealCooldownChanged;
 
     /// <summary>Caches components prior to first frame execution.</summary>
     private void Awake()
@@ -115,8 +124,14 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         }
     }
 
-    /// <summary>Broadcasts the initial heal state after all other components' Awake calls have resolved.</summary>
-    /// <remarks>Now HandleHealthChanged compares against the actual starting HP.</remarks>
+    /// <summary>
+    /// Captures the initial health baseline after all Awake calls resolve, then broadcasts
+    /// the initial heal resource state to any UI listeners.
+    /// </summary>
+    /// <remarks>
+    /// Running this in Start rather than Awake guarantees that Health.currentHealth has been
+    /// initialized by its own Awake before we read it, regardless of script execution order.
+    /// </remarks>
     private void Start()
     {
         if (enemyHealth != null) previousHealth = enemyHealth.CurrentHealth;
@@ -190,6 +205,7 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
 
         if (turnManager.CurrentTurn != TurnState.EnemyTurn) yield break;
 
+        // Tick the cooldown down at the start of each enemy turn before evaluating decisions.
         if (healCooldownRemaining > 0)
         {
             healCooldownRemaining--;
@@ -217,6 +233,8 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
             healCooldownRemaining = healCooldownTurns;
             OnHealUsesChanged?.Invoke(healUsesRemaining, maxHealUses);
             OnHealCooldownChanged?.Invoke(healCooldownRemaining, healCooldownTurns);
+
+            OnHowlUsed?.Invoke();
 
             EndAITurn();
         }
@@ -249,10 +267,13 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     }
 
     /// <inheritdoc/>
+    /// <remarks>Must be triggered via Animation Event if an animator is present.</remarks>
     public void ExecuteStandardDamage()
     {
         float finalDamage = CalculateDamage(minClawDamage, maxClawDamage, out bool isCrit);
         playerHealth.TakeDamage(finalDamage, isCrit);
+
+        OnClawAttackUsed?.Invoke();
 
         if (aiAnimator != null) aiAnimator.SetTrigger("WolfIdle");
         EndAITurn();
@@ -266,6 +287,8 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     {
         float finalDamage = CalculateDamage(minBiteDamage, maxBiteDamage, out bool isCrit);
         playerHealth.TakeDamage(finalDamage, isCrit);
+
+        OnBiteAttackUsed?.Invoke();
 
         if (aiAnimator != null) aiAnimator.SetTrigger("WolfIdle");
         EndAITurn();

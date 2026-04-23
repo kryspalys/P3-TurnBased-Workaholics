@@ -43,13 +43,13 @@ public class Health : MonoBehaviour, ITurnListener
     /// <value>A boolean indicating if the entity is currently mitigating incoming damage.</value>
     public bool IsDefending => isDefending;
 
-    [Header("Broadcasting Events")]
-    /// <summary>Event fired whenever health increases or decreases. Passes current and max health for UI sliders.</summary>
-    public UnityEvent<float, float> OnHealthChanged;
-
     [Header("Dependencies")]
     /// <summary>Reference to the global turn authority used to expire per-turn buffs.</summary>
     [SerializeField] private TurnManager turnManager;
+
+    [Header("Broadcasting Events")]
+    /// <summary>Event fired whenever health increases or decreases. Passes current and max health for UI sliders.</summary>
+    public UnityEvent<float, float> OnHealthChanged;
 
     /// <summary>Event fired when damage is successfully applied. Passes the damage amount and critical hit status for floating text.</summary>
     public UnityEvent<float, bool> OnDamageTaken;
@@ -118,7 +118,7 @@ public class Health : MonoBehaviour, ITurnListener
     /// </summary>
     /// <param name="state">Pass <c>true</c> to enable defense mode; otherwise, pass <c>false</c>.</param>
     /// <param name="mitigationPercentage">The decimal percentage of damage to block (e.g., 0.5f for 50%). Defaults to 0.</param>
-    public void SetDefending(bool state, float mitigationPercentage = 0f)
+    public void SetDefending(bool state, float mitigationPercentage)
     {
         isDefending = state;
         defenseMultiplier = mitigationPercentage;

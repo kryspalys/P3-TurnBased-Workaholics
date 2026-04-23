@@ -87,6 +87,18 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <summary>Broadcasts instantly when an action is selected to notify the UI to lock buttons.</summary>
     public UnityEvent OnActionStarted;
 
+    /// <summary>Broadcast when the player executes a basic melee attack. Listened to by audio, VFX, etc.</summary>
+    public UnityEvent OnCaneWhackUsed;
+
+    /// <summary>Broadcast when the player executes the special purse slam attack.</summary>
+    public UnityEvent OnPurseSlamUsed;
+
+    /// <summary>Broadcast when the player uses the defensive block action.</summary>
+    public UnityEvent OnKnittingShieldUsed;
+
+    /// <summary>Broadcast when the player uses the cookie heal action.</summary>
+    public UnityEvent OnBakeCookiesUsed;
+
     /// <summary>The animator component driving visual feedback states.</summary>
     private Animator characterAnimator;
 
@@ -255,6 +267,8 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         float finalDamage = CalculateDamage(minCaneDamage, maxCaneDamage, out bool isCrit);
         enemyHealth.TakeDamage(finalDamage, isCrit);
 
+        OnCaneWhackUsed?.Invoke();
+
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
     }
@@ -266,6 +280,8 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
         float finalDamage = CalculateDamage(minPurseDamage, maxPurseDamage, out bool isCrit);
         enemyHealth.TakeDamage(finalDamage, isCrit);
 
+        OnPurseSlamUsed?.Invoke();
+
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
     }
@@ -276,7 +292,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     {
         float finalHeal = Random.Range(minCookieHealAmount, maxCookieHealAmount);
         playerHealth.Heal(finalHeal);
-
+        OnBakeCookiesUsed?.Invoke();
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
         EndTurn();
     }
@@ -289,6 +305,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
 
         float randomMitigation = Random.Range(minBlockMitigation, maxBlockMitigation);
         playerHealth.SetDefending(true, randomMitigation);
+        OnKnittingShieldUsed?.Invoke();
         EndTurn();
     }
 

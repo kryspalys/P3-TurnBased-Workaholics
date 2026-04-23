@@ -2746,6 +2746,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+--- !u!114 &660497004 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4018635023031135567, guid: b329cd19fffb2d843804df1d40583796, type: 3}
+  m_PrefabInstance: {fileID: 660497003}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: be4f353e4c6299f41b4faf39a0884ccb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyAI
 --- !u!1 &661483957
 GameObject:
   m_ObjectHideFlags: 0
@@ -3747,6 +3758,125 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
+--- !u!1 &936577045
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 936577046}
+  - component: {fileID: 936577047}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &936577046
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936577045}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1019714654}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &936577047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 936577045}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64e71717d7134d240b6fee85b2bf0e09, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  turnManager: {fileID: 1925152512}
+  playerHealth: {fileID: 275556234}
+  enemyHealth: {fileID: 1056764143}
+  playerCombat: {fileID: 275556233}
+  enemyAI: {fileID: 660497004}
+  sfxPoolSize: 4
+  masterSfxVolume: 1
+  caneWhackSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  purseSlamSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  knittingShieldSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  bakeCookiesSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  clawAttackSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  biteAttackSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  howlSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  playerHurtSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  enemyHurtSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  critStingerSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  deathSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  playerTurnSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  enemyTurnSfx:
+    clip: {fileID: 0}
+    volume: 1
+    pitch: 1
+    pitchVariance: 0.05
+  combatMusic: {fileID: 0}
+  musicVolume: 0.5
+  gameOverMusic: {fileID: 0}
 --- !u!1 &941650014
 GameObject:
   m_ObjectHideFlags: 0
@@ -3845,6 +3975,7 @@ Transform:
   - {fileID: 1925152511}
   - {fileID: 1830360185}
   - {fileID: 1445995241}
+  - {fileID: 936577046}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &1056764141 stripped
