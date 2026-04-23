@@ -34,12 +34,12 @@ public class CombatUIManager : MonoBehaviour
         switch (currentState)
         {
             case TurnState.PlayerTurn:
-                turnIndicatorText.text = "Grandma's Turn";
+                turnIndicatorText.text = "Your Turn";
                 aiActionLogText.text = "Waiting for your move...";
                 SetPlayerButtonsInteractable(true);
                 break;
             case TurnState.EnemyTurn:
-                turnIndicatorText.text = "Enemy's Turn";
+                turnIndicatorText.text = "Wolf's Turn";
                 SetPlayerButtonsInteractable(false);
                 break;
             case TurnState.GameOver:
