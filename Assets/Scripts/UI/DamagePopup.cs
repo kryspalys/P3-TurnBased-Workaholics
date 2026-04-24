@@ -29,6 +29,10 @@ public class DamagePopup : MonoBehaviour
     [SerializeField] private Color critColor = Color.red;
     /// <summary>The visual color applied to hit point restoration numbers.</summary>
     [SerializeField] private Color healColor = Color.green;
+    /// <summary>The visual color applied to mitigated damage numbers.</summary>
+    [SerializeField] private Color mitigationColor = new Color(0.2f, 0.6f, 1f); // Default to a cyan/blue
+    /// <summary>The scale multiplier applied to the font size for mitigated damage text.</summary>
+    [SerializeField, Range(0.1f, 1f)] private float mitigationTextScale = 0.20f;
 
     /// <summary>Internal tracking variable for the current applied text color.</summary>
     private Color textColor;
@@ -81,6 +85,22 @@ public class DamagePopup : MonoBehaviour
     }
 
     /// <summary>
+    /// Initializes the visual representation of the text for blocked damage.
+    /// </summary>
+    /// <param name="mitigationPercentage">The percentage of damage blocked by a defensive stance.</param>
+    public void SetupMitigation(float mitigationPercentage)
+    {
+        // Formats the text to read exactly like: "50% blocked"
+        textMesh.text = Mathf.RoundToInt(mitigationPercentage).ToString() + "% blocked";
+        textColor = mitigationColor;
+
+        // Shrinks the font size using the Inspector-defined multiplier
+        textMesh.fontSize *= mitigationTextScale;
+
+        ApplyStyling();
+    }
+
+    /// <summary>
     /// Applies the calculated text color and introduces a slight random positional offset.
     /// </summary>
     private void ApplyStyling()
@@ -92,10 +112,6 @@ public class DamagePopup : MonoBehaviour
     /// <summary>
     /// Executes coordinate and alpha modifications during the primary physics-independent loop.
     /// </summary>
-    /// <remarks>
-    /// <para>Pushes the transform upwards by multiplying <see cref="floatSpeed"/> by <c>Time.deltaTime</c>. 
-    /// Once the <see cref="disappearTimer"/> expires, it reduces the alpha channel until the object dictates its own destruction.</para>
-    /// </remarks>
     private void Update()
     {
         transform.position += new Vector3(0, floatSpeed * Time.deltaTime, 0);

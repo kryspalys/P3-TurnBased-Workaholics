@@ -17,10 +17,16 @@ public interface ITextSpawner
     /// </summary>
     /// <param name="healAmount">The numerical amount of health restored.</param>
     void SpawnHealText(float healAmount);
+
+    /// <summary>
+    /// Instantiates the visual text element specifically styled for mitigated damage.
+    /// </summary>
+    /// <param name="mitigatedAmount">The numerical amount of damage blocked.</param>
+    void SpawnMitigationText(float mitigatedAmount);
 }
 
 /// <summary>
-/// Automatically listens to a local <see cref="Health"/> component and instantiates floating text upon taking damage or healing.
+/// Automatically listens to a local <see cref="Health"/> component and instantiates floating text upon state changes.
 /// </summary>
 /// <remarks>
 /// <para>Attach this script directly to any character GameObject (Grandma or Wolf) that also contains a health component.</para>
@@ -43,11 +49,6 @@ public class FloatingTextSpawner : MonoBehaviour, ITextSpawner
     /// <summary>
     /// Validates prefab assignments and caches the sibling health component.
     /// </summary>
-    /// <remarks>
-    /// If the <see cref="damagePopupPrefab"/> is unassigned or the required <see cref="Health"/> component
-    /// cannot be located, an error is logged to the Unity Console and the script disables itself to prevent
-    /// cascading null-reference failures in <see cref="OnEnable"/>.
-    /// </remarks>
     private void Awake()
     {
         if (damagePopupPrefab == null)
@@ -65,7 +66,7 @@ public class FloatingTextSpawner : MonoBehaviour, ITextSpawner
     }
 
     /// <summary>
-    /// Subscribes the spawner to the local health component's damage and healing broadcasts.
+    /// Subscribes the spawner to the local health component's broadcasts.
     /// </summary>
     private void OnEnable()
     {
@@ -73,6 +74,7 @@ public class FloatingTextSpawner : MonoBehaviour, ITextSpawner
         {
             healthComponent.OnDamageTaken.AddListener(SpawnFloatingText);
             healthComponent.OnHealed.AddListener(SpawnHealText);
+            healthComponent.OnDamageMitigated.AddListener(SpawnMitigationText);
         }
     }
 
@@ -85,6 +87,7 @@ public class FloatingTextSpawner : MonoBehaviour, ITextSpawner
         {
             healthComponent.OnDamageTaken.RemoveListener(SpawnFloatingText);
             healthComponent.OnHealed.RemoveListener(SpawnHealText);
+            healthComponent.OnDamageMitigated.RemoveListener(SpawnMitigationText);
         }
     }
 
@@ -102,6 +105,19 @@ public class FloatingTextSpawner : MonoBehaviour, ITextSpawner
         Vector3 position = spawnPoint != null ? spawnPoint.position : transform.position;
         DamagePopup popup = Instantiate(damagePopupPrefab, position, Quaternion.identity);
         popup.SetupHeal(healAmount);
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>Applies a horizontal offset to the left so the mitigation text does not overlap the standard damage text.</remarks>
+    public void SpawnMitigationText(float mitigationPercentage)
+    {
+        Vector3 position = spawnPoint != null ? spawnPoint.position : transform.position;
+
+        // Offset to the left (X: -1f) and slightly up (Y: 0.25f)
+        position += new Vector3(-1f, 0.25f, 0);
+
+        DamagePopup popup = Instantiate(damagePopupPrefab, position, Quaternion.identity);
+        popup.SetupMitigation(mitigationPercentage);
     }
 
     /// <summary>
