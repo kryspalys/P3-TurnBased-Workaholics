@@ -17,17 +17,12 @@ public interface IPlayerCombat
 /// Manages the protagonist's specific combat actions, including RNG damage modifiers and animation routing.
 /// </summary>
 /// <remarks>
-/// <para>Damage values are dynamically calculated per turn using <see cref="Random.Range"/>.</para>
+/// <para>Acts as the primary controller for player actions. Damage values are dynamically calculated per turn using <see cref="Random.Range"/>.</para>
 /// <list type="bullet">
-/// <item><term>Animation Driven</term><description>Damage is applied via Animation Events when an animator is active.</description></item>
+/// <item><term>Event Timing</term><description>Audio and UI events are broadcast immediately upon action selection to decouple feedback from mechanical execution.</description></item>
+/// <item><term>Animation Driven</term><description>Mathematical damage is applied via Animation Events when an animator is active.</description></item>
 /// <item><term>Fallback Support</term><description>If no animator is present, damage and turn progression execute instantly.</description></item>
 /// </list>
-/// <example>
-/// <code>
-/// // Example of UI Event triggering the primary sequence:
-/// myPlayerCombat.Action_CaneWhack();
-/// </code>
-/// </example>
 /// <include file='ExternalDocs.xml' path='docs/members[@name="PlayerCombat"]/PlayerCombat/*'/>
 /// </remarks>
 /// <seealso cref="TurnManager"/>
@@ -87,16 +82,16 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     /// <summary>Broadcasts instantly when an action is selected to notify the UI to lock buttons.</summary>
     public UnityEvent OnActionStarted;
 
-    /// <summary>Broadcast when the player executes a basic melee attack. Listened to by audio, VFX, etc.</summary>
+    /// <summary>Broadcast when the player initiates a basic melee attack. Listened to by audio, VFX, etc.</summary>
     public UnityEvent OnCaneWhackUsed;
 
-    /// <summary>Broadcast when the player executes the special purse slam attack.</summary>
+    /// <summary>Broadcast when the player initiates the special purse slam attack.</summary>
     public UnityEvent OnPurseSlamUsed;
 
-    /// <summary>Broadcast when the player uses the defensive block action.</summary>
+    /// <summary>Broadcast when the player initiates the defensive block action.</summary>
     public UnityEvent OnKnittingShieldUsed;
 
-    /// <summary>Broadcast when the player uses the cookie heal action.</summary>
+    /// <summary>Broadcast when the player initiates the cookie heal action.</summary>
     public UnityEvent OnBakeCookiesUsed;
 
     /// <summary>The animator component driving visual feedback states.</summary>
@@ -161,6 +156,7 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <inheritdoc/>
+    /// <remarks>Broadcasts the audio event immediately before passing flow to the Animator.</remarks>
     public void Action_CaneWhack()
     {
         if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked) return;
@@ -168,31 +164,43 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
 
         UpdateGrandmaMeter(1);
 
+        // Trigger audio immediately on action start
+        OnCaneWhackUsed?.Invoke();
+
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyAttack");
         else ExecuteMeleeDamage();
     }
 
     /// <summary>Initiates the defensive block sequence and concludes the player phase.</summary>
+    /// <remarks>Broadcasts the audio event immediately before passing flow to the Animator.</remarks>
     public void Action_KnittingShield()
     {
         if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked) return;
         LockAction();
+
+        // Trigger audio immediately on action start
+        OnKnittingShieldUsed?.Invoke();
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyBlock");
         else ExecuteBlock();
     }
 
     /// <summary>Initiates the healing sequence and concludes the player phase.</summary>
+    /// <remarks>Broadcasts the audio event immediately before passing flow to the Animator.</remarks>
     public void Action_BakeCookies()
     {
         if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked) return;
         LockAction();
+
+        // Trigger audio immediately on action start
+        OnBakeCookiesUsed?.Invoke();
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyHeal");
         else ExecuteHeal();
     }
 
     /// <summary>Initiates the ultimate attack sequence if the meter is fully charged.</summary>
+    /// <remarks>Broadcasts the audio event immediately before passing flow to the Animator.</remarks>
     public void Action_PurseSlam()
     {
         if (turnManager.CurrentTurn != TurnState.PlayerTurn || isActionLocked || currentGrandmaMeter < maxGrandmaMeter) return;
@@ -200,6 +208,9 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
 
         currentGrandmaMeter = 0;
         OnMeterUpdated?.Invoke(currentGrandmaMeter, maxGrandmaMeter);
+
+        // Trigger audio immediately on action start
+        OnPurseSlamUsed?.Invoke();
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannySpecial");
         else ExecuteSpecialDamage();
@@ -261,12 +272,11 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <summary>Executes the mathematical damage application for a basic attack.</summary>
-    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
+    /// <remarks>Strictly handles mathematical state changes. Must be triggered by an Animation Event if an Animator is present.</remarks>
     public void ExecuteMeleeDamage()
     {
         float finalDamage = CalculateDamage(minCaneDamage, maxCaneDamage, out bool isCrit);
-        
-        OnCaneWhackUsed?.Invoke();
+
         enemyHealth.TakeDamage(finalDamage, isCrit);
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
@@ -274,12 +284,11 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <summary>Executes the mathematical damage application for the ultimate attack.</summary>
-    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
+    /// <remarks>Strictly handles mathematical state changes. Must be triggered by an Animation Event if an Animator is present.</remarks>
     public void ExecuteSpecialDamage()
     {
         float finalDamage = CalculateDamage(minPurseDamage, maxPurseDamage, out bool isCrit);
-        
-        OnPurseSlamUsed?.Invoke();
+
         enemyHealth.TakeDamage(finalDamage, isCrit);
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
@@ -287,12 +296,11 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <summary>Executes the mathematical healing logic.</summary>
-    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
+    /// <remarks>Strictly handles mathematical state changes. Must be triggered by an Animation Event if an Animator is present.</remarks>
     public void ExecuteHeal()
     {
         float finalHeal = Random.Range(minCookieHealAmount, maxCookieHealAmount);
 
-        OnBakeCookiesUsed?.Invoke();
         playerHealth.Heal(finalHeal);
 
         if (characterAnimator != null) characterAnimator.SetTrigger("GrannyIdle");
@@ -300,16 +308,15 @@ public class PlayerCombat : MonoBehaviour, IPlayerCombat
     }
 
     /// <summary>Executes the mathematical defense buff logic.</summary>
-    /// <remarks>Must be triggered by an Animation Event if an Animator is present.</remarks>
+    /// <remarks>Strictly handles mathematical state changes. Must be triggered by an Animation Event if an Animator is present.</remarks>
     public void ExecuteBlock()
     {
         if (turnManager.CurrentTurn != TurnState.PlayerTurn) return;
 
         float randomMitigation = Random.Range(minBlockMitigation, maxBlockMitigation);
-        
-        OnKnittingShieldUsed?.Invoke();
+
         playerHealth.SetDefending(true, randomMitigation);
-        
+
         EndTurn();
     }
 

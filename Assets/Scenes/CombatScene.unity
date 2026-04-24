@@ -3940,12 +3940,12 @@ MonoBehaviour:
     pitch: 1
     pitchVariance: 0.05
   playerTurnSfx:
-    clip: {fileID: 8300000, guid: ad07508907a18f848900242e54420ab8, type: 3}
+    clip: {fileID: 0}
     volume: 1
     pitch: 1
     pitchVariance: 0.025
   enemyTurnSfx:
-    clip: {fileID: 8300000, guid: a83747df5285f734c99828fd42d7386f, type: 3}
+    clip: {fileID: 0}
     volume: 1
     pitch: 1
     pitchVariance: 0.025

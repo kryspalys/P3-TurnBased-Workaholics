@@ -18,7 +18,7 @@ public interface IEnemyAI
 /// Controls the programmatic decision-making logic for the AI antagonist.
 /// </summary>
 /// <remarks>
-/// <para>This class handles automated responses and ensures animations map perfectly to the underlying mathematical state.</para>
+/// <para>Acts as the central controller for AI responses, ensuring animations map perfectly to the underlying mathematical state.</para>
 /// <list type="bullet">
 /// <item><term>Threshold Logic</term><description>Decisions are dynamically hardcoded based on HP percentages.</description></item>
 /// <item><term>Event Driven</term><description>Subscribes to global state changes rather than polling heavily in continuous loops.</description></item>
@@ -86,13 +86,13 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>Broadcasts the current and maximum cooldown whenever the cooldown state changes. Used by UI listeners.</summary>
     public UnityEvent<int, int> OnHealCooldownChanged;
 
-    /// <summary>Broadcast when the wolf executes a basic claw attack. Listened to by audio, VFX, etc.</summary>
+    /// <summary>Broadcast when the wolf initiates a basic claw attack. Listened to by audio, VFX, etc.</summary>
     public UnityEvent OnClawAttackUsed;
 
-    /// <summary>Broadcast when the wolf executes the heavy bite attack.</summary>
+    /// <summary>Broadcast when the wolf initiates the heavy bite attack.</summary>
     public UnityEvent OnBiteAttackUsed;
 
-    /// <summary>Broadcast when the wolf executes the self-heal howl.</summary>
+    /// <summary>Broadcast when the wolf initiates the self-heal howl.</summary>
     public UnityEvent OnHowlUsed;
 
     /// <summary>The animator component driving the AI's visual state.</summary>
@@ -157,8 +157,6 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <param name="newState">The newly broadcasted state from the turn manager.</param>
     private void HandleTurnChange(TurnState newState)
     {
-        Debug.Log($"[TRACE 3] EnemyAI heard Turn Change: {newState}");
-
         if (newState == TurnState.EnemyTurn)
         {
             StartCoroutine(ExecuteEnemyTurnSequence());
@@ -197,6 +195,7 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <item><description>Otherwise, if own HP is low (&lt; 50%) AND heal is off cooldown AND uses remain, self-heal.</description></item>
     /// <item><description>Otherwise, use a standard claw attack.</description></item>
     /// </list>
+    /// <para>Audio events are broadcast immediately once the decision is locked, decoupled from the execution math.</para>
     /// </remarks>
     /// <returns>An <see cref="IEnumerator"/> handling the deliberation delay.</returns>
     private IEnumerator ExecuteEnemyTurnSequence()
@@ -217,13 +216,20 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         if (playerHealth.GetHealthPercentage() < 0.3f)
         {
             OnAIDecisionMade?.Invoke("The Beast lunges for a heavy bite!");
-            // BUG FIX: Changed from "WolfAttack" to "WolfBite" so it uses the correct animation and event!
+
+            // Trigger audio immediately
+            OnBiteAttackUsed?.Invoke();
+
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfBite");
             else ExecuteHeavyDamage();
         }
         else if (enemyHealth.GetHealthPercentage() < 0.5f && canHeal)
         {
             OnAIDecisionMade?.Invoke("The Beast howls, regenerating health!");
+
+            // Trigger audio immediately
+            OnHowlUsed?.Invoke();
+
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfHeal");
 
             float finalHeal = Random.Range(minHowlHealAmount, maxHowlHealAmount);
@@ -234,13 +240,15 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
             OnHealUsesChanged?.Invoke(healUsesRemaining, maxHealUses);
             OnHealCooldownChanged?.Invoke(healCooldownRemaining, healCooldownTurns);
 
-            OnHowlUsed?.Invoke();
-
             EndAITurn();
         }
         else
         {
             OnAIDecisionMade?.Invoke("The Beast swipes its claws!");
+
+            // Trigger audio immediately
+            OnClawAttackUsed?.Invoke();
+
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
             else ExecuteStandardDamage();
         }
@@ -267,13 +275,11 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     }
 
     /// <inheritdoc/>
-    /// <remarks>Must be triggered via Animation Event if an animator is present.</remarks>
+    /// <remarks>Strictly handles mathematical state changes. Must be triggered via Animation Event if an animator is present.</remarks>
     public void ExecuteStandardDamage()
     {
         float finalDamage = CalculateDamage(minClawDamage, maxClawDamage, out bool isCrit);
         playerHealth.TakeDamage(finalDamage, isCrit);
-
-        OnClawAttackUsed?.Invoke();
 
         if (aiAnimator != null) aiAnimator.SetTrigger("WolfIdle");
         EndAITurn();
@@ -282,20 +288,18 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>
     /// Applies heavily scaled damage for the AI's special threshold attack.
     /// </summary>
-    /// <remarks>Must be triggered via Animation Event if an animator is present.</remarks>
+    /// <remarks>Strictly handles mathematical state changes. Must be triggered via Animation Event if an animator is present.</remarks>
     public void ExecuteHeavyDamage()
     {
         float finalDamage = CalculateDamage(minBiteDamage, maxBiteDamage, out bool isCrit);
         playerHealth.TakeDamage(finalDamage, isCrit);
-
-        OnBiteAttackUsed?.Invoke();
 
         if (aiAnimator != null) aiAnimator.SetTrigger("WolfIdle");
         EndAITurn();
     }
 
     /// <summary>
-    /// Returns control to the player interface by requesting a state change from the global manager.
+    /// Returns control to the player interface by requesting a state change from the global controller.
     /// </summary>
     private void EndAITurn()
     {
