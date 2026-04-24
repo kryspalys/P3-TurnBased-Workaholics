@@ -40,13 +40,17 @@ public class DamagePopup : MonoBehaviour
     /// <summary>
     /// Validates internal UI references prior to execution.
     /// </summary>
-    /// <exception cref="System.NullReferenceException">Thrown if the TextMeshPro component is missing.</exception>
+    /// <remarks>
+    /// If the TextMeshPro component is missing, logs an error and disables the script to prevent
+    /// cascading null-reference failures in <see cref="Update"/>.
+    /// </remarks>
     private void Awake()
     {
         if (textMesh == null)
-        {
-            throw new System.NullReferenceException("DamagePopup requires a TMP_Text component assignment.");
-        }
+            {
+        Debug.LogError($"{name}: DamagePopup requires a TMP_Text component assignment.", this);
+        enabled = false;
+            }
     }
 
     /// <summary>

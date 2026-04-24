@@ -68,21 +68,25 @@ public class PauseManager : MonoBehaviour, IPauseManager
     public bool IsPaused => isPaused;
 
     /// <summary>
-    /// Validates dependencies before the first frame.
+    /// Validates dependencies and sets initial state before the first frame.
     /// </summary>
-    /// <exception cref="System.NullReferenceException">Thrown if the <see cref="pauseCanvas"/> is not assigned in the Inspector.</exception>
+    /// <remarks>
+    /// If the <see cref="pauseCanvas"/> reference is missing, logs an error and disables the script
+    /// so <see cref="Update"/> doesn't attempt to toggle a null canvas.
+    /// </remarks>
     private void Start()
     {
         if (pauseCanvas == null)
         {
-            throw new System.NullReferenceException("Pause Canvas is not assigned to the PauseManager.");
+        Debug.LogError($"{name}: Pause Canvas is not assigned to the PauseManager.", this);
+        enabled = false;
+        return;
         }
 
-        // Ensure the menu is hidden and time is normal when the scene loads
-        pauseCanvas.SetActive(false);
-        Time.timeScale = 1f;
+    // Ensure the menu is hidden and time is normal when the scene loads
+    pauseCanvas.SetActive(false);
+    Time.timeScale = 1f;
     }
-
     /// <summary>
     /// Evaluates input every frame to intercept the designated pause key.
     /// </summary>

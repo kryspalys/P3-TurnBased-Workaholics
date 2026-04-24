@@ -34,12 +34,12 @@ public class CombatUIManager : MonoBehaviour
         switch (currentState)
         {
             case TurnState.PlayerTurn:
-                turnIndicatorText.text = "Your Turn";
-                aiActionLogText.text = "Waiting for your move...";
+                if (turnIndicatorText != null) turnIndicatorText.text = "Your Turn";
+                if (aiActionLogText != null) aiActionLogText.text = "Waiting for your move...";
                 SetPlayerButtonsInteractable(true);
                 break;
             case TurnState.EnemyTurn:
-                turnIndicatorText.text = "Wolf's Turn";
+                if (turnIndicatorText != null) turnIndicatorText.text = "Wolf's Turn";
                 SetPlayerButtonsInteractable(false);
                 break;
             case TurnState.GameOver:
@@ -47,7 +47,6 @@ public class CombatUIManager : MonoBehaviour
                 break;
         }
     }
-
     /// <summary>
     /// Instantly forces all player buttons into an inactive state to prevent duplicate inputs.
     /// </summary>
@@ -65,18 +64,20 @@ public class CombatUIManager : MonoBehaviour
     /// <param name="message">The string representation of the AI's intent.</param>
     public void UpdateAILog(string message)
     {
-        aiActionLogText.text = message;
+        if (aiActionLogText != null) aiActionLogText.text = message;
     }
-
+    
     /// <summary>
     /// Iterates through all combat buttons and toggles their active state.
     /// </summary>
     /// <param name="state">True to enable clicking; false to visually disable the buttons.</param>
     private void SetPlayerButtonsInteractable(bool state)
     {
+        if (playerActionButtons == null) return;
+
         foreach (Button btn in playerActionButtons)
         {
-            btn.interactable = state;
+            if (btn != null) btn.interactable = state;
         }
     }
 
@@ -86,7 +87,10 @@ public class CombatUIManager : MonoBehaviour
     /// <param name="didPlayerWin">True if the player survived; false if the AI survived.</param>
     public void TriggerGameOver(bool didPlayerWin)
     {
-        gameOverPanel.SetActive(true);
+        if (gameOverPanel != null) gameOverPanel.SetActive(true);
+        if (gameOverWinnerText != null)
+        {
         gameOverWinnerText.text = didPlayerWin ? "Grandma Survived!" : "The Beast Wins...";
+        }
     }
 }

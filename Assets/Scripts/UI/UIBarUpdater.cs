@@ -25,6 +25,7 @@ public class UIBarUpdater : MonoBehaviour
     /// <param name="max">The maximum possible capacity.</param>
     public void UpdateBar(float current, float max)
     {
+        if (targetSlider == null) return;
         targetSlider.maxValue = max;
         targetSlider.value = current;
     }
@@ -36,6 +37,7 @@ public class UIBarUpdater : MonoBehaviour
     /// <param name="max">The maximum possible capacity.</param>
     public void UpdateBar(int current, int max)
     {
+        if (targetSlider == null) return;
         targetSlider.maxValue = max;
         targetSlider.value = current;
     }
