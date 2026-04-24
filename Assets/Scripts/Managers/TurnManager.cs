@@ -50,8 +50,15 @@ public class TurnManager : MonoBehaviour, ITurnManager
     /// <summary>
     /// Initializes the combat loop by forcing the initial state broadcast prior to player interaction.
     /// </summary>
-    private void Start()
+    /// <remarks>
+    /// Uses an IEnumerator to wait one frame. This guarantees all other scripts (Health, EnemyAI, UI) 
+    /// have completed their Start() methods and are actively listening before the first turn fires.
+    /// </remarks>
+    private System.Collections.IEnumerator Start()
     {
+        // Wait for the end of the current frame's initialization phase
+        yield return null;
+
         SwitchTurn(TurnState.PlayerTurn);
     }
 
