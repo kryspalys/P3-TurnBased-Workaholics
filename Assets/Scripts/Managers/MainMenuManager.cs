@@ -18,14 +18,15 @@ public interface IMenuManager
 }
 
 /// <summary>
-/// Handles the high-level scene routing and application flow for the primary title screen.
+/// Handles the high-level scene routing, application flow, and ambient audio for the primary title screen.
 /// </summary>
 /// <remarks>
-/// <para>This class is responsible for bridging the UI buttons to the Unity Scene Management system.</para>
+/// <para>This class is responsible for bridging the UI buttons to the Unity Scene Management system and handling localized menu music.</para>
 /// <para>Key responsibilities include:</para>
 /// <list type="bullet">
 /// <item><term>Scene Loading</term><description>Transitions the user from the menu to the gameplay state.</description></item>
 /// <item><term>Application Exit</term><description>Safely shuts down the executable.</description></item>
+/// <item><term>Audio Management</term><description>Plays background music exclusively during the menu lifecycle.</description></item>
 /// </list>
 /// <example>
 /// Attach this script to an empty <c>MenuManager</c> GameObject and link the UI Button OnClick events:
@@ -35,13 +36,29 @@ public interface IMenuManager
 /// </code>
 /// </example>
 /// </remarks>
-
 public class MainMenuManager : MonoBehaviour, IMenuManager
 {
+    [Header("Scene Routing")]
     /// <summary>
     /// The exact string identifier of the target scene to load.
     /// </summary>
     [SerializeField] private string targetSceneName = "CombatScene";
+
+    [Header("Audio Settings")]
+    /// <summary>
+    /// The looping background music track to play while the menu is active.
+    /// </summary>
+    [SerializeField] private AudioClip menuMusic;
+
+    /// <summary>
+    /// Master volume multiplier applied to the menu music.
+    /// </summary>
+    [SerializeField, Range(0f, 1f)] private float musicVolume = 0.5f;
+
+    /// <summary>
+    /// Internal dedicated AudioSource for background music, generated dynamically at runtime.
+    /// </summary>
+    private AudioSource musicSource;
 
     /// <summary>
     /// Gets the name of the designated combat scene.
@@ -49,9 +66,34 @@ public class MainMenuManager : MonoBehaviour, IMenuManager
     /// <value>A <see cref="string"/> representing the scene file name as registered in the Build Settings.</value>
     public string TargetSceneName => targetSceneName;
 
+    /// <summary>
+    /// Constructs the internal audio source component and applies baseline configuration.
+    /// </summary>
+    private void Awake()
+    {
+        musicSource = gameObject.AddComponent<AudioSource>();
+        musicSource.playOnAwake = false;
+        musicSource.loop = true;
+        musicSource.volume = musicVolume;
+        musicSource.spatialBlend = 0f; // Ensures standard 2D audio with no positional falloff
+    }
+
+    /// <summary>
+    /// Initiates ambient audio playback after all initializations have resolved.
+    /// </summary>
+    private void Start()
+    {
+        if (menuMusic != null)
+        {
+            musicSource.clip = menuMusic;
+            musicSource.Play();
+        }
+    }
+
     /// <inheritdoc/>
     public void StartGame()
     {
+        StopMusicSafely();
         LoadSceneTransition(targetSceneName);
     }
 
@@ -59,6 +101,7 @@ public class MainMenuManager : MonoBehaviour, IMenuManager
     public void QuitGame()
     {
         Debug.Log("Quit command registered.");
+        StopMusicSafely();
 
 #if UNITY_EDITOR
         // This stops the play mode inside the Unity Editor
@@ -67,6 +110,17 @@ public class MainMenuManager : MonoBehaviour, IMenuManager
         // This closes the actual executable once the game is built
         Application.Quit();
 #endif
+    }
+
+    /// <summary>
+    /// Safely halts audio playback if an active track is currently playing.
+    /// </summary>
+    private void StopMusicSafely()
+    {
+        if (musicSource != null && musicSource.isPlaying)
+        {
+            musicSource.Stop();
+        }
     }
 
     /// <summary>

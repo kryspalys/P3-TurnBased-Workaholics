@@ -14,7 +14,7 @@ public interface ITurnListener
 }
 
 /// <summary>
-/// A decoupled component responsible for managing hit points and broadcasting damage or healing events.
+/// A decoupled component responsible for managing hit points and broadcasting damage, mitigation, or healing events.
 /// </summary>
 /// <remarks>
 /// <para>This class acts as the central data hub for an entity's vitality. It relies entirely on the <see cref="UnityEvent"/> system to communicate with the UI and visual effect spawners, adhering strictly to decoupled architecture principles.</para>
@@ -54,6 +54,9 @@ public class Health : MonoBehaviour, ITurnListener
     /// <summary>Event fired when damage is successfully applied. Passes the damage amount and critical hit status for floating text.</summary>
     public UnityEvent<float, bool> OnDamageTaken;
 
+    /// <summary>Event fired when incoming damage is mitigated by a defensive stance. Passes the numerical amount blocked.</summary>
+    public UnityEvent<float> OnDamageMitigated;
+
     /// <summary>Event fired when hit points are successfully restored. Passes the healed amount for floating text.</summary>
     public UnityEvent<float> OnHealed;
 
@@ -73,19 +76,23 @@ public class Health : MonoBehaviour, ITurnListener
     }
 
     /// <summary>
-    /// Reduces the entity's current health by the specified numerical amount.
+    /// Reduces the entity's current health by the specified numerical amount and broadcasts damage and mitigation data.
     /// </summary>
-    /// <param name="damageAmount">The raw numerical damage value to apply to the health pool.</param>
+    /// <param name="damageAmount">The raw numerical damage value targeting the health pool.</param>
     /// <param name="isCrit">A boolean flag indicating if the incoming attack was calculated as a critical hit.</param>
     /// <remarks>
-    /// If the <see cref="isDefending"/> flag evaluates to <c>true</c>, the <paramref name="damageAmount"/> is reduced by the stored <see cref="defenseMultiplier"/>.
+    /// If the <see cref="isDefending"/> flag evaluates to <c>true</c>, the <paramref name="damageAmount"/> is reduced by the stored <see cref="defenseMultiplier"/>, and the difference is broadcast via <see cref="OnDamageMitigated"/>.
     /// </remarks>
     public void TakeDamage(float damageAmount, bool isCrit = false)
     {
+        float mitigatedAmount = 0f;
+
         if (isDefending)
         {
+            float originalDamage = damageAmount;
             // If the multiplier is 0.75f, you mitigate 75%, meaning you only take 25% of the damage.
             damageAmount *= (1f - defenseMultiplier);
+            mitigatedAmount = originalDamage - damageAmount;
         }
 
         currentHealth -= damageAmount;
@@ -93,6 +100,12 @@ public class Health : MonoBehaviour, ITurnListener
 
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         OnDamageTaken?.Invoke(damageAmount, isCrit);
+
+        // Only broadcast if actual damage was blocked
+        if (mitigatedAmount > 0)
+        {
+            OnDamageMitigated?.Invoke(mitigatedAmount);
+        }
 
         if (currentHealth <= 0)
         {
@@ -136,12 +149,6 @@ public class Health : MonoBehaviour, ITurnListener
     /// <summary>
     /// Subscribes to the global turn authority so this entity can react to state transitions.
     /// </summary>
-    /// <remarks>
-    /// <para>The <see cref="ITurnListener"/> contract requires this component to respond when the combat phase changes —
-    /// specifically, to expire the one-turn <see cref="isDefending"/> buff at the start of each new player turn.</para>
-    /// <para>Subscription happens in <c>OnEnable</c> rather than <c>Awake</c> so that the listener chain is correctly
-    /// re-established if the GameObject is ever deactivated and reactivated at runtime.</para>
-    /// </remarks>
     private void OnEnable()
     {
         if (turnManager != null) turnManager.OnTurnChanged.AddListener(OnTurnStateChanged);
@@ -150,10 +157,6 @@ public class Health : MonoBehaviour, ITurnListener
     /// <summary>
     /// Unsubscribes from the turn authority to prevent memory leaks and ghost invocations.
     /// </summary>
-    /// <remarks>
-    /// Mirrors the subscription in <see cref="OnEnable"/>. Failing to remove listeners when a component is disabled
-    /// or destroyed is a common source of <see cref="System.NullReferenceException"/> in Unity event-driven architectures.
-    /// </remarks>
     private void OnDisable()
     {
         if (turnManager != null) turnManager.OnTurnChanged.RemoveListener(OnTurnStateChanged);
