@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using CombatSettings;
@@ -33,13 +33,19 @@ public class CombatUIManager : MonoBehaviour
     [SerializeField] private TMP_Text gameOverWinnerText;
 
     /// <summary>
-    /// Listens to the OnMeterUpdated event from PlayerCombat to track ultimate readiness.
+    /// Flags the ultimate attack as ready to be used.
     /// </summary>
-    /// <param name="current">The current charge level.</param>
-    /// <param name="max">The maximum capacity.</param>
-    public void EvaluateSpecialButton(int current, int max)
+    public void SetSpecialReady()
     {
-        isSpecialReady = (current >= max);
+        isSpecialReady = true;
+    }
+
+    /// <summary>
+    /// Flags the ultimate attack as consumed or unavailable.
+    /// </summary>
+    public void SetSpecialConsumed()
+    {
+        isSpecialReady = false;
     }
 
     /// <summary>
