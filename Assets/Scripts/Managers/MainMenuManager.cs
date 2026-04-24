@@ -35,7 +35,6 @@ public interface IMenuManager
 /// </code>
 /// </example>
 /// </remarks>
-
 public class MainMenuManager : MonoBehaviour, IMenuManager
 {
     /// <summary>
