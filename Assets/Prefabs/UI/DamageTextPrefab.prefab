@@ -52,6 +52,8 @@ MonoBehaviour:
   normalColor: {r: 1, g: 1, b: 1, a: 1}
   critColor: {r: 1, g: 0, b: 0, a: 1}
   healColor: {r: 0, g: 1, b: 0, a: 1}
+  mitigationColor: {r: 0.2, g: 0.6, b: 1, a: 1}
+  mitigationTextScale: 0.25
 --- !u!1 &4400999249678964290
 GameObject:
   m_ObjectHideFlags: 0
