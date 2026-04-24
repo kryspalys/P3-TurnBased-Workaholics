@@ -19,11 +19,28 @@ public class CombatUIManager : MonoBehaviour
     /// <summary>Array containing all player action buttons to manage interactability states.</summary>
     [SerializeField] private Button[] playerActionButtons;
 
+    [Header("Special Ability UI")]
+    /// <summary>Dedicated reference to the ultimate attack button.</summary>
+    [SerializeField] private Button specialButton;
+
+    /// <summary>Tracks if the ultimate meter is fully charged.</summary>
+    private bool isSpecialReady = false;
+
     [Header("Game Over UI")]
     /// <summary>The parent canvas panel containing the terminal screen elements.</summary>
     [SerializeField] private GameObject gameOverPanel;
     /// <summary>Text field displaying the winner of the bout.</summary>
     [SerializeField] private TMP_Text gameOverWinnerText;
+
+    /// <summary>
+    /// Listens to the OnMeterUpdated event from PlayerCombat to track ultimate readiness.
+    /// </summary>
+    /// <param name="current">The current charge level.</param>
+    /// <param name="max">The maximum capacity.</param>
+    public void EvaluateSpecialButton(int current, int max)
+    {
+        isSpecialReady = (current >= max);
+    }
 
     /// <summary>
     /// Translates the logical <see cref="TurnState"/> into visual HUD updates and manages button interaction.
@@ -47,6 +64,7 @@ public class CombatUIManager : MonoBehaviour
                 break;
         }
     }
+
     /// <summary>
     /// Instantly forces all player buttons into an inactive state to prevent duplicate inputs.
     /// </summary>
@@ -66,7 +84,7 @@ public class CombatUIManager : MonoBehaviour
     {
         if (aiActionLogText != null) aiActionLogText.text = message;
     }
-    
+
     /// <summary>
     /// Iterates through all combat buttons and toggles their active state.
     /// </summary>
@@ -79,6 +97,13 @@ public class CombatUIManager : MonoBehaviour
         {
             if (btn != null) btn.interactable = state;
         }
+
+        // OVERRIDE: The special button has an extra condition. It must be both the player's turn AND fully charged.
+        // It does not matter if this button is also in the playerActionButtons array; this logic will safely overwrite it.
+        if (specialButton != null)
+        {
+            specialButton.interactable = state && isSpecialReady;
+        }
     }
 
     /// <summary>
@@ -90,7 +115,7 @@ public class CombatUIManager : MonoBehaviour
         if (gameOverPanel != null) gameOverPanel.SetActive(true);
         if (gameOverWinnerText != null)
         {
-        gameOverWinnerText.text = didPlayerWin ? "Grandma Survived!" : "The Beast Wins...";
+            gameOverWinnerText.text = didPlayerWin ? "Grandma Survived!" : "The Beast Wins...";
         }
     }
 }

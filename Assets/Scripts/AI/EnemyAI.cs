@@ -18,7 +18,7 @@ public interface IEnemyAI
 /// Controls the programmatic decision-making logic for the AI antagonist.
 /// </summary>
 /// <remarks>
-/// <para>Acts as the central controller for AI responses, ensuring animations map perfectly to the underlying mathematical state.</para>
+/// <para>This class handles automated responses and ensures animations map perfectly to the underlying mathematical state.</para>
 /// <list type="bullet">
 /// <item><term>Threshold Logic</term><description>Decisions are dynamically hardcoded based on HP percentages.</description></item>
 /// <item><term>Event Driven</term><description>Subscribes to global state changes rather than polling heavily in continuous loops.</description></item>
@@ -76,6 +76,9 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>Tracks the cooldown counter. Decrements at the start of each enemy turn; heal is locked until this reaches zero.</summary>
     private int healCooldownRemaining = 0;
 
+    /// <summary>Tracks which attack to use during the critical threshold. True = Bite, False = Claw.</summary>
+    private bool nextCriticalAttackIsBite = true;
+
     [Header("Broadcasting Events")]
     /// <summary>Broadcasts the AI's intended action as a text string to the UI listener.</summary>
     public UnityEvent<string> OnAIDecisionMade;
@@ -86,13 +89,13 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <summary>Broadcasts the current and maximum cooldown whenever the cooldown state changes. Used by UI listeners.</summary>
     public UnityEvent<int, int> OnHealCooldownChanged;
 
-    /// <summary>Broadcast when the wolf initiates a basic claw attack. Listened to by audio, VFX, etc.</summary>
+    /// <summary>Broadcast when the wolf executes a basic claw attack. Listened to by audio, VFX, etc.</summary>
     public UnityEvent OnClawAttackUsed;
 
-    /// <summary>Broadcast when the wolf initiates the heavy bite attack.</summary>
+    /// <summary>Broadcast when the wolf executes the heavy bite attack.</summary>
     public UnityEvent OnBiteAttackUsed;
 
-    /// <summary>Broadcast when the wolf initiates the self-heal howl.</summary>
+    /// <summary>Broadcast when the wolf executes the self-heal howl.</summary>
     public UnityEvent OnHowlUsed;
 
     /// <summary>The animator component driving the AI's visual state.</summary>
@@ -157,6 +160,8 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <param name="newState">The newly broadcasted state from the turn manager.</param>
     private void HandleTurnChange(TurnState newState)
     {
+        Debug.Log($"[TRACE 3] EnemyAI heard Turn Change: {newState}");
+
         if (newState == TurnState.EnemyTurn)
         {
             StartCoroutine(ExecuteEnemyTurnSequence());
@@ -191,7 +196,7 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     /// <remarks>
     /// <para>Decision priorities, in order:</para>
     /// <list type="number">
-    /// <item><description>If the player is at critical HP (&lt; 30%), lunge for a heavy bite to secure the kill.</description></item>
+    /// <item><description>If the player is at critical HP (&lt; 30%), alternate between a heavy bite and claw attack to secure the kill.</description></item>
     /// <item><description>Otherwise, if own HP is low (&lt; 50%) AND heal is off cooldown AND uses remain, self-heal.</description></item>
     /// <item><description>Otherwise, use a standard claw attack.</description></item>
     /// </list>
@@ -212,22 +217,43 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         }
 
         bool canHeal = healUsesRemaining > 0 && healCooldownRemaining <= 0;
+        float playerHpPercent = playerHealth.GetHealthPercentage();
 
-        if (playerHealth.GetHealthPercentage() < 0.3f)
+        // RESET LOGIC: If the player manages to heal above 30%, reset the critical attack pattern
+        if (playerHpPercent >= 0.3f)
         {
-            OnAIDecisionMade?.Invoke("The Beast lunges for a heavy bite!");
+            nextCriticalAttackIsBite = true;
+        }
 
-            // Trigger audio immediately
-            OnBiteAttackUsed?.Invoke();
+        // DECISION TREE
+        if (playerHpPercent < 0.3f)
+        {
+            if (nextCriticalAttackIsBite)
+            {
+                OnAIDecisionMade?.Invoke("The Beast lunges for a heavy bite!");
+                OnBiteAttackUsed?.Invoke();
 
-            if (aiAnimator != null) aiAnimator.SetTrigger("WolfBite");
-            else ExecuteHeavyDamage();
+                if (aiAnimator != null) aiAnimator.SetTrigger("WolfBite");
+                else ExecuteHeavyDamage();
+
+                // Toggle the flag so it uses Claw next time
+                nextCriticalAttackIsBite = false;
+            }
+            else
+            {
+                OnAIDecisionMade?.Invoke("The Beast follows up with a desperate claw swipe!");
+                OnClawAttackUsed?.Invoke();
+
+                if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
+                else ExecuteStandardDamage();
+
+                // Toggle the flag back to Bite
+                nextCriticalAttackIsBite = true;
+            }
         }
         else if (enemyHealth.GetHealthPercentage() < 0.5f && canHeal)
         {
             OnAIDecisionMade?.Invoke("The Beast howls, regenerating health!");
-
-            // Trigger audio immediately
             OnHowlUsed?.Invoke();
 
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfHeal");
@@ -245,8 +271,6 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
         else
         {
             OnAIDecisionMade?.Invoke("The Beast swipes its claws!");
-
-            // Trigger audio immediately
             OnClawAttackUsed?.Invoke();
 
             if (aiAnimator != null) aiAnimator.SetTrigger("WolfAttack");
@@ -299,7 +323,7 @@ public class EnemyAI : MonoBehaviour, IEnemyAI
     }
 
     /// <summary>
-    /// Returns control to the player interface by requesting a state change from the global controller.
+    /// Returns control to the player interface by requesting a state change from the global manager.
     /// </summary>
     private void EndAITurn()
     {
