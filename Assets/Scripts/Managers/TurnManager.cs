@@ -71,7 +71,7 @@ public class TurnManager : MonoBehaviour, ITurnManager
     {
         if (currentTurnState == TurnState.GameOver) return;
 
-        // BUG FIX: Prevent the turn manager from firing the same turn twice in a row.
+        // Prevent the turn manager from firing the same turn twice in a row.
         if (hasInitialized && currentTurnState == newState) return;
 
         hasInitialized = true;
