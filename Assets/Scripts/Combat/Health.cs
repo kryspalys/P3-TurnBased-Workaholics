@@ -86,6 +86,7 @@ public class Health : MonoBehaviour, ITurnListener
     public void TakeDamage(float damageAmount, bool isCrit = false)
     {
         float mitigatedAmount = 0f;
+        float percentBlocked = 0f;
 
         if (isDefending)
         {
@@ -93,6 +94,9 @@ public class Health : MonoBehaviour, ITurnListener
             // If the multiplier is 0.75f, you mitigate 75%, meaning you only take 25% of the damage.
             damageAmount *= (1f - defenseMultiplier);
             mitigatedAmount = originalDamage - damageAmount;
+
+            // Capture the percentage to send to the UI (e.g., 0.5f * 100 = 50f)
+            percentBlocked = defenseMultiplier * 100f;
         }
 
         currentHealth -= damageAmount;
@@ -101,10 +105,10 @@ public class Health : MonoBehaviour, ITurnListener
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
         OnDamageTaken?.Invoke(damageAmount, isCrit);
 
-        // Only broadcast if actual damage was blocked
+        // Only broadcast if actual damage was blocked, sending the percentage
         if (mitigatedAmount > 0)
         {
-            OnDamageMitigated?.Invoke(mitigatedAmount);
+            OnDamageMitigated?.Invoke(percentBlocked);
         }
 
         if (currentHealth <= 0)

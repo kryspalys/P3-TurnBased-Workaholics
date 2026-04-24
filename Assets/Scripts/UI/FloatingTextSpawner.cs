@@ -108,16 +108,16 @@ public class FloatingTextSpawner : MonoBehaviour, ITextSpawner
     }
 
     /// <inheritdoc/>
-    /// <remarks>Applies a slight vertical offset so the mitigation text does not perfectly overlap the standard damage text.</remarks>
-    public void SpawnMitigationText(float mitigatedAmount)
+    /// <remarks>Applies a horizontal offset to the left so the mitigation text does not overlap the standard damage text.</remarks>
+    public void SpawnMitigationText(float mitigationPercentage)
     {
         Vector3 position = spawnPoint != null ? spawnPoint.position : transform.position;
 
-        // Offset slightly to prevent text clipping if damage and block happen simultaneously
-        position += new Vector3(0, 0.5f, 0);
+        // Offset to the left (X: -1f) and slightly up (Y: 0.25f)
+        position += new Vector3(-1f, 0.25f, 0);
 
         DamagePopup popup = Instantiate(damagePopupPrefab, position, Quaternion.identity);
-        popup.SetupMitigation(mitigatedAmount);
+        popup.SetupMitigation(mitigationPercentage);
     }
 
     /// <summary>

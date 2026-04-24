@@ -31,6 +31,8 @@ public class DamagePopup : MonoBehaviour
     [SerializeField] private Color healColor = Color.green;
     /// <summary>The visual color applied to mitigated damage numbers.</summary>
     [SerializeField] private Color mitigationColor = new Color(0.2f, 0.6f, 1f); // Default to a cyan/blue
+    /// <summary>The scale multiplier applied to the font size for mitigated damage text.</summary>
+    [SerializeField, Range(0.1f, 1f)] private float mitigationTextScale = 0.20f;
 
     /// <summary>Internal tracking variable for the current applied text color.</summary>
     private Color textColor;
@@ -85,11 +87,15 @@ public class DamagePopup : MonoBehaviour
     /// <summary>
     /// Initializes the visual representation of the text for blocked damage.
     /// </summary>
-    /// <param name="mitigatedAmount">The numerical amount of damage blocked by a defensive stance.</param>
-    public void SetupMitigation(float mitigatedAmount)
+    /// <param name="mitigationPercentage">The percentage of damage blocked by a defensive stance.</param>
+    public void SetupMitigation(float mitigationPercentage)
     {
-        textMesh.text = "Block " + Mathf.RoundToInt(mitigatedAmount).ToString();
+        // Formats the text to read exactly like: "50% blocked"
+        textMesh.text = Mathf.RoundToInt(mitigationPercentage).ToString() + "% blocked";
         textColor = mitigationColor;
+
+        // Shrinks the font size using the Inspector-defined multiplier
+        textMesh.fontSize *= mitigationTextScale;
 
         ApplyStyling();
     }
