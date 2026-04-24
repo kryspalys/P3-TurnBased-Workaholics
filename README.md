@@ -10,7 +10,7 @@ A turn-based combat game where Grandma defends herself against a wolf through al
 |-|-|
 |*Krys Palys*|*2530015*|
 |*Emil Marchand*|*2530012*|
-|*Alex Alexandre Nobre*||
+|*Alex Alexandre Nobre*|*2545871*|
 |*Nataliya Laptyk*|*2530192*|
 
 \---
