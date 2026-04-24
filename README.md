@@ -10,7 +10,7 @@ A turn-based combat game where Grandma defends herself against a wolf through al
 |-|-|
 |*Krys Palys*|*2530015*|
 |*Emil Marchand*|*2530012*|
-|*Alex Alexandre Nobre*||
+|*Alex Alexandre Nobre*|*2545871*|
 |*Nataliya Laptyk*|*2530192*|
 
 \---
@@ -47,7 +47,7 @@ Restores Grandma's HP by a randomized amount (`minCookieHealAmount` to `maxCooki
 
 ### 4\. Purse Slam (special ultimate)
 
-A high-damage finisher (`minPurseDamage` to `maxPurseDamage`, default 35-45) gated behind the Grandma Meter. The meter charges +1 on every Cane Whack use and must reach 3/3 before Purse Slam becomes usable. Upon use, the meter resets to zero. This creates a resource loop where the player earns their big attack through sustained basic combat.
+A high-damage finisher (`minPurseDamage` to `maxPurseDamage`, default 35-45) gated behind the Grandma Meter. The meter charges +1 on every Cane Whack use and must reach 3/3 before Purse Slam becomes usable. Upon use, the meter resets to zero. This creates a resource loop where the player earns their big attack through sustained basic combat. The ability's button is visually grayed out (uninteractable) in the UI until the meter is fully charged.
 
 ### Why these four
 
@@ -63,7 +63,7 @@ The wolf is controlled by `EnemyAI`, which subscribes to `TurnManager.OnTurnChan
 
 Evaluated top-to-bottom each enemy turn:
 
-1. **If player HP is below 30%** → lunge for a heavy bite (high damage, 22-32) to secure the kill
+1. **If player HP is below 30%** → alternate between a heavy bite (high damage, 22-32) and a desperate claw swipe (12-18 damage) to secure the kill
 2. **If own HP is below 50% AND heal is available** → howl to self-heal (25-35 HP restored)
 3. **Otherwise** → basic claw attack (12-18 damage)
 
@@ -81,7 +81,7 @@ Together these create a window of vulnerability: after the wolf heals, the playe
 The wolf's intent is broadcast four ways on every decision:
 
 * **Action log text** — "The Beast swipes its claws!" / "The Beast lunges for a heavy bite!" / "The Beast howls, regenerating health!"
-* **Floating damage numbers** spawned above Grandma's head on damage, with critical hits rendered in red with a "!" suffix
+* **Floating damage numbers** spawned above Grandma's head on damage, with critical hits rendered in red with a "!" suffix. A distinct, dynamically scaled mitigation popup (e.g., "50% blocked") spawns offset to the left when a defensive stance successfully absorbs damage.
 * **Attack-intent icons** — `EnemyAIActionUI` listens to the per-attack events and briefly flashes a claw or bite icon above the wolf to telegraph the chosen move
 * **Distinct SFX** for each attack type (see Audio System below)
 
@@ -219,7 +219,6 @@ This approach means every script either degrades gracefully or logs a clear, cli
 * **No save/load system.** The encounter starts fresh on every scene load. Adding persistence would require a `PlayerPrefs` or `ScriptableObject` layer that is out of scope for this assignment.
 * **Wolf has no defensive action.** The AI uses healing as its sole survival tool. A block-equivalent behavior was considered but would require additional Animator states and would not meaningfully change the strategic space.
 * **The `PauseManager` uses `Time.timeScale`**, which freezes physics but not audio. This is standard Unity behavior and not a bug, but means music continues during a pause. Intentional for this scope.
-* **Initial turn broadcast relies on Unity's standard lifecycle ordering.** `TurnManager.Start` fires `OnTurnChanged` to kick off the first player turn; this works because Unity guarantees all `OnEnable` calls resolve before any `Start` call. If script execution order ever changes, the first broadcast could arrive before listeners are subscribed. No runtime issue in the current scope.
 
 \---
 
